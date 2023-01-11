@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=5, python learning_rate_range_test.py --entity="cv_inside" --project="lrrt-wlasl100-tssi" --sweep_id="l53gv97d"
