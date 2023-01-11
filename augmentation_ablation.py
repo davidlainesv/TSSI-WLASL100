@@ -41,7 +41,7 @@ train_and_validation_dataframe = pd.concat(
     [train_dataframe, validation_dataframe], axis=0, ignore_index=True)
 
 # Split data
-skf = StratifiedKFold(NUM_SPLITS=NUM_SPLITS)
+skf = StratifiedKFold(NUM_SPLITS)
 num_total_examples = len(train_and_validation_dataframe["video"].unique())
 labels = train_and_validation_dataframe.groupby(
     "video")["label"].unique().tolist()
