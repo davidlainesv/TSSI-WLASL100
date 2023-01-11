@@ -27,7 +27,7 @@ import pandas as pd
 # !wget "https://storage.googleapis.com/cloud-ai-platform-f3305919-42dc-47f1-82cf-4f1a3202db74/wlasl100_skeletons_val.csv" -nc
 # !wget "https://storage.googleapis.com/cloud-ai-platform-f3305919-42dc-47f1-82cf-4f1a3202db74/wlasl100_skeletons_test.csv" -nc
 
-N_SPLITS = 5
+NUM_SPLITS = 5
 INPUT_SHAPE = [None, 181, 3]
 RANDOM_SEED = 0
 
@@ -40,12 +40,12 @@ train_and_validation_dataframe = pd.concat(
     [train_dataframe, validation_dataframe], axis=0, ignore_index=True)
 
 # Split data
-skf = StratifiedKFold(n_splits=N_SPLITS)
-n_total_examples = len(train_and_validation_dataframe["video"].unique())
+skf = StratifiedKFold(NUM_SPLITS=NUM_SPLITS)
+num_total_examples = len(train_and_validation_dataframe["video"].unique())
 labels = train_and_validation_dataframe.groupby(
     "video")["label"].unique().tolist()
-splits = list(skf.split(np.zeros(n_total_examples), labels))
-n_train_examples = len(splits[0][0])
+splits = list(skf.split(np.zeros(num_total_examples), labels))
+num_train_examples = len(splits[0][0])
 
 
 class LearningRateVsLossCallback(tf.keras.callbacks.Callback):
@@ -163,7 +163,34 @@ class LearningRateVsLossCallback(tf.keras.callbacks.Callback):
         return self.logs
 
 
-def build_sgd_optimizer(hyperparameters={}):
+def build_sgd_optimizer(initial_learning_rate=0.001,
+                        maximal_learning_rate=0.01,
+                        step_size=50, momentum=0.0,
+                        nesterov=False, weight_decay=1e-7):
+    # setup schedule
+    learning_rate_schedule = TriangularCyclicalLearningRate(
+        initial_learning_rate=initial_learning_rate,
+        maximal_learning_rate=maximal_learning_rate,
+        step_size=step_size)
+
+    # setup the optimizer
+    if weight_decay:
+        initial_weight_decay = weight_decay
+        maximal_weight_decay = weight_decay * \
+            (maximal_learning_rate / initial_learning_rate)
+        weight_decay_schedule = TriangularCyclicalLearningRate(
+            initial_learning_rate=initial_weight_decay,
+            maximal_learning_rate=maximal_weight_decay,
+            step_size=step_size)
+
+        optimizer = SGDW(learning_rate=learning_rate_schedule,
+                         weight_decay=weight_decay_schedule,
+                         momentum=momentum, nesterov=nesterov)
+    else:
+        optimizer = SGD(learning_rate=learning_rate_schedule,
+                        momentum=momentum, nesterov=nesterov)
+    return optimizer
+
     # extract hyperparameters
     initial_learning_rate = hyperparameters["initial_learning_rate"]
     maximal_learning_rate = hyperparameters["maximal_learning_rate"]
@@ -255,7 +282,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
         return
     print("[INFO] Configuration:", config, "\n")
 
-    # select split (1...N_SPLITS)
+    # select split (1...NUM_SPLITS)
     print("Training on split {}".format(config["training"]["split"]))
     split_indices = splits[config["training"]["split"] - 1]
     train_indices, val_indices = split_indices
@@ -279,7 +306,12 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
         batch_size=config["training"]['test_batch_size'])
 
     # setup optimizer
-    optimizer = build_sgd_optimizer(hyperparameters=config['optimizer'])
+    optimizer = build_sgd_optimizer(initial_learning_rate=config['optimizer']['initial_learning_rate'],
+                                    maximal_learning_rate=config['optimizer']['maximal_learning_rate'],
+                                    momentum=config['optimizer']['momentum'],
+                                    nesterov=config['optimizer']['nesterov'],
+                                    step_size=config['optimizer']['step_size'],
+                                    weight_decay=config['optimizer']['weight_decay'])
 
     # setup model
     if config['model']['backbone'] == "densenet":
@@ -304,7 +336,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
     # train model
     model.fit(train_dataset,
-              epochs=config['training']['n_epochs'],
+              epochs=config['training']['num_epochs'],
               verbose=verbose,
               callbacks=[lrc])
 
@@ -316,7 +348,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
 def agent_fn(config=None):
     run = wandb.init(config=config, reinit=True)
-    steps_per_epoch = np.ceil(n_train_examples / wandb.config.batch_size)
+    steps_per_epoch = np.ceil(num_train_examples / wandb.config.batch_size)
     config = {
         'model': {
             'backbone': wandb.config.backbone,
@@ -332,7 +364,7 @@ def agent_fn(config=None):
             'step_size': wandb.config.num_epochs * steps_per_epoch
         },
         'training': {
-            'n_epochs': wandb.config.num_epochs,
+            'num_epochs': wandb.config.num_epochs,
             'train_batch_size': wandb.config.batch_size,
             'test_batch_size': wandb.config.batch_size,
             'augmentation':  wandb.config.augmentation,
@@ -365,7 +397,7 @@ def main(args):
                 'backbone': {'value': backbone},
                 'augmentation': {'value': augmentation},
                 'pretraining': {'value': pretraining},
-                'split': {'values': list(range(1, N_SPLITS + 1))},
+                'split': {'values': list(range(1, NUM_SPLITS + 1))},
                 'initial_learning_rate': {'value': lr_min},
                 'maximal_learning_rate': {'value': lr_max},
                 'batch_size': {'values': [32, 64, 128]},
@@ -409,7 +441,7 @@ if __name__ == "__main__":
         if args.lr_max is None:
             raise Exception("Please provide lr_max")
         print(args.entity, args.project, args.backbone,
-          args.augmentation, args.lr_min, args.lr_max)
+              args.augmentation, args.lr_min, args.lr_max)
 
     print(args.entity, args.project, args.sweep_id)
 
