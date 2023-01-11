@@ -235,7 +235,7 @@ def main(args):
 
                 'num_epochs': num_epochs,
                 'train_batch_size': batch_size,
-                'test_bast_size': batch_size,
+                'test_batch_size': batch_size,
                 'ablation': ablation,
                 'split': split
             }
