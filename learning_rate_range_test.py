@@ -388,22 +388,29 @@ if __name__ == "__main__":
                         help='Entity', default='cv_inside')
     parser.add_argument('--project', type=str,
                         help='Project name', required=True)
-    parser.add_argument('--sweep_id', type=str,
-                        help='Sweep id')
+    parser.add_argument('--sweep_id', type=str, help='Sweep id')
     parser.add_argument('--backbone', type=str,
-                        help='Backbone method: \'densenet\', \'mobilenet\'',
-                        required=True)
-    parser.add_argument('--pretraining', type=bool,
-                        help='Add pretraining', required=True)
-    parser.add_argument('--augmentation', type=bool,
-                        help='Add augmentation', required=True)
-    parser.add_argument('--lr_min', type=float,
-                        help='Minimum learning rate', required=True)
-    parser.add_argument('--lr_max', type=float,
-                        help='Minimum learning rate', required=True)
+                        help='Backbone method: \'densenet\', \'mobilenet\'')
+    parser.add_argument('--pretraining', type=bool, help='Add pretraining')
+    parser.add_argument('--augmentation', type=bool, help='Add augmentation')
+    parser.add_argument('--lr_min', type=float, help='Minimum learning rate')
+    parser.add_argument('--lr_max', type=float, help='Minimum learning rate')
     args = parser.parse_args()
 
-    print(args.entity, args.project, args.backbone,
+    if args.sweep_id is None:
+        if args.backbone is None:
+            raise Exception("Please provide backbone")
+        if args.pretraining is None:
+            raise Exception("Please provide pretraining")
+        if args.augmentation is None:
+            raise Exception("Please provide augmentation")
+        if args.lr_min is None:
+            raise Exception("Please provide lr_min")
+        if args.lr_max is None:
+            raise Exception("Please provide lr_max")
+        print(args.entity, args.project, args.backbone,
           args.augmentation, args.lr_min, args.lr_max)
+
+    print(args.entity, args.project, args.sweep_id)
 
     main(args)
