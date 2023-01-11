@@ -217,7 +217,7 @@ def main(args):
     ablations = [abl for abl in args.ablations.split()
                  if abl in available_ablations]
 
-    steps_per_epoch = np.ceil(num_train_examples / wandb.config.batch_size)
+    steps_per_epoch = np.ceil(num_train_examples / batch_size)
 
     for ablation in ablations:
         for split in list(range(1, NUM_SPLITS + 1)):
