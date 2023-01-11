@@ -200,6 +200,9 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
 
 def main(args):
+    available_ablations = ['scale', 'shift',
+                           'flip', 'rotation', 'speed', 'none']
+
     entity = args.entity
     project = args.project
     lr_min = args.lr_min
@@ -211,7 +214,9 @@ def main(args):
     num_epochs = args.num_epochs
     batch_size = args.batch_size
 
-    ablations = ["scale", "shift", "flip", "rotation", "speed", "none"]
+    ablations = [abl for abl in args.ablations.split()
+                 if abl in available_ablations]
+
     steps_per_epoch = np.ceil(num_train_examples / wandb.config.batch_size)
 
     for ablation in ablations:
@@ -247,35 +252,26 @@ if __name__ == "__main__":
                         help='Entity', default='cv_inside')
     parser.add_argument('--project', type=str,
                         help='Project name', required=True)
+    parser.add_argument('--ablations', type=str,
+                        help='Ablations (performed individually): "scale", "shift", "flip", "rotation", "speed", "none"',
+                        required=True)
     parser.add_argument('--backbone', type=str,
-                        help='Backbone method: \'densenet\', \'mobilenet\'')
-    parser.add_argument('--pretraining', type=bool, help='Add pretraining')
-    parser.add_argument('--lr_min', type=float, help='Minimum learning rate')
-    parser.add_argument('--lr_max', type=float, help='Maximum learning rate')
-    parser.add_argument('--weight_decay', type=float, help='Weight decay')
-    parser.add_argument('--dropout', type=float, help='Dropout')
-    parser.add_argument('--batch_size', type=float,
-                        help='Batch size (train & test)')
-    parser.add_argument('--num_epochs', type=float, help='Number of epochs')
+                        help='Backbone method: \'densenet\', \'mobilenet\'',
+                        required=True)
+    parser.add_argument('--pretraining', type=bool, help='Add pretraining',
+                        required=True)
+    parser.add_argument('--lr_min', type=float, help='Minimum learning rate',
+                        required=True)
+    parser.add_argument('--lr_max', type=float, help='Maximum learning rate',
+                        required=True)
+    parser.add_argument('--weight_decay', type=float, help='Weight decay',
+                        required=True)
+    parser.add_argument('--dropout', type=float, help='Dropout',
+                        required=True)
+    parser.add_argument('--batch_size', type=int,
+                        help='Batch size (train & test)', required=True)
+    parser.add_argument('--num_epochs', type=int,
+                        help='Number of epochs', required=True)
     args = parser.parse_args()
-
-    if args.backbone is None:
-        raise Exception("Please provide backbone")
-    if args.pretraining is None:
-        raise Exception("Please provide pretraining")
-    if args.lr_min is None:
-        raise Exception("Please provide lr_min")
-    if args.lr_max is None:
-        raise Exception("Please provide lr_max")
-    if args.weight_decay is None:
-        raise Exception("Please provide weight_decay")
-    if args.dropout is None:
-        raise Exception("Please provide dropout")
-    if args.batch_size is None:
-        raise Exception("Please provide batch_size")
-    if args.num_epochs is None:
-        raise Exception("Please provide num_epochs")
-
-    print(args.entity, args.project)
 
     main(args)
