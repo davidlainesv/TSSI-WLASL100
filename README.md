@@ -1,2 +1,2 @@
-# tssi
-Helper functions for Tree Structured Skeleton Images
+# TSSI + DeepLearning for skeleton-based WLASL100
+Experiments using Tree Structure Skeleton Images
