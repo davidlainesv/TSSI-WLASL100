@@ -14,6 +14,8 @@ available_augmentations = {
     'speed': RandomSpeed(frames=128, seed=5)
 }
 
+augmentations_order = ['scale', 'shift', 'flip', 'rotation', 'speed']
+
 
 def dataframe_to_dataset(dataframe, columns, filter_video_ids=[]):
     x_sorted_columns = [col + "_x" for col in columns]
@@ -125,7 +127,7 @@ def generate_dataset(dataframe, training=False, video_ids=[],
     # define the list of augmentations
     # in the default order
     if augmentations == "all":
-        augmentations = ['scale', 'shift', 'flip', 'rotation', 'speed']
+        augmentations = augmentations_order
         
     if augmentations == None:
         augmentations = []
