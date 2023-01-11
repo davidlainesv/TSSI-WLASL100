@@ -1,7 +1,7 @@
-python -m pip install numpy
-python -m pip install pandas
-python -m pip install mediapipe
-python -m pip install 'tensorflow>=2.11.0,<2.12.0'
-python -m pip install tensorflow-datasets
-python -m pip install tensorflow-addons
-python -m pip install wandb
+numpy
+pandas
+mediapipe
+tensorflow==2.11.*
+tensorflow-datasets
+tensorflow-addons
+wandb
