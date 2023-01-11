@@ -10,7 +10,7 @@ CUDA_VISIBLE_DEVICES=5, python augmentation_ablation.py --entity="cv_inside" \
                                                         --batch_size=64
                                                         --num_epochs=200
 
-CUDA_VISIBLE_DEVICES=5, python augmentation_ablation.py --entity="cv_inside" \
+CUDA_VISIBLE_DEVICES=6, python augmentation_ablation.py --entity="cv_inside" \
                                                         --project="augabl-wlasl100-tssi" \
                                                         --ablations="rotation speed none" \
                                                         --backbone="densenet" \
