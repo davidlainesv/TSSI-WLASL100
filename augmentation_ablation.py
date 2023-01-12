@@ -3,7 +3,6 @@
 """
 
 import argparse
-import shutil
 from dataset import generate_dataset, augmentations_order
 from sklearn.model_selection import StratifiedKFold
 import numpy as np
@@ -245,9 +244,6 @@ def main(args):
                              project=project, config=config)
             run_experiment(config=config, log_to_wandb=True, verbose=0)
             run.finish()
-
-            # clean logs
-            shutil.rmtree('wandb', ignore_errors=True)
 
 
 if __name__ == "__main__":
