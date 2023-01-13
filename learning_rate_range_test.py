@@ -191,38 +191,6 @@ def build_sgd_optimizer(initial_learning_rate=0.001,
                         momentum=momentum, nesterov=nesterov)
     return optimizer
 
-    # extract hyperparameters
-    initial_learning_rate = hyperparameters["initial_learning_rate"]
-    maximal_learning_rate = hyperparameters["maximal_learning_rate"]
-    step_size = hyperparameters["step_size"]
-    momentum = hyperparameters["momentum"] or 0.0
-    nesterov = hyperparameters["nesterov"] or False
-    weight_decay = hyperparameters["weight_decay"]
-
-    # setup schedule
-    learning_rate_schedule = TriangularCyclicalLearningRate(
-        initial_learning_rate=initial_learning_rate,
-        maximal_learning_rate=maximal_learning_rate,
-        step_size=step_size)
-
-    # setup the optimizer
-    if weight_decay:
-        initial_weight_decay = weight_decay
-        maximal_weight_decay = weight_decay * \
-            (maximal_learning_rate / initial_learning_rate)
-        weight_decay_schedule = TriangularCyclicalLearningRate(
-            initial_learning_rate=initial_weight_decay,
-            maximal_learning_rate=maximal_weight_decay,
-            step_size=step_size)
-
-        optimizer = SGDW(learning_rate=learning_rate_schedule,
-                         weight_decay=weight_decay_schedule,
-                         momentum=momentum, nesterov=nesterov)
-    else:
-        optimizer = SGD(learning_rate=learning_rate_schedule,
-                        momentum=momentum, nesterov=nesterov)
-    return optimizer
-
 
 def build_densenet121_model(input_shape=[None, 181, 3], dropout=0,
                             optimizer=None, pretraining=True):
