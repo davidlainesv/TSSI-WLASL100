@@ -854,49 +854,6 @@ class RandomShift(tf.keras.layers.Layer):
     #     return tf.vectorized_map(self.shift, images)
     
 
-class RandomScaleAndShift(tf.keras.layers.Layer):
-    def __init__(self, scale_factor=[0.5, 0.0], shift_range=[0.0, 255.0],
-                 min_value=0.0, max_value=255.0, **kwargs):
-        super().__init__(**kwargs)
-        if type(scale_factor) is list:
-            if len(scale_factor) != 2:
-                raise Exception("Scale factor must be a " +
-                                "list with length=2 or num")
-            self.scale_min_value = 1.0 - scale_factor[0]
-            self.scale_max_value = 1.0 + scale_factor[1]
-        elif type(scale_factor) is int or type(scale_factor) is float:
-            self.scale_min_value = 1.0 - scale_factor
-            self.scale_max_value = 1.0 + scale_factor
-        else:
-            self.scale_min_value = 0.5
-            self.scale_max_value = 1.0
-
-        if type(shift_range) is list:
-            if len(shift_range) != 2:
-                raise Exception("Shift factor must be a " +
-                                "list with length=2 or num")
-            self.shift_min_value = shift_range[0]
-            self.shift_max_value = shift_range[1]
-        else:
-            self.shift_min_value = 0.0
-            self.shift_max_value = 255.0
-
-        self.min_value = min_value
-        self.max_value = max_value
-
-    @tf.function
-    def call(self, image):
-        scale_value = tf.random.uniform(shape=[], minval=self.scale_min_value,
-                                        maxval=self.scale_max_value)
-        shift_value = tf.random.uniform(shape=[], minval=self.shift_min_value,
-                                        maxval=self.shift_max_value)
-        [red, green, blue] = tf.unstack(image, axis=-1)
-        new_red = (red - shift_value) * scale_value + shift_value
-        new_green = (green - shift_value) * scale_value + shift_value
-        new_red = tf.clip_by_value(new_red, self.min_value, self.max_value)
-        new_green = tf.clip_by_value(new_green, self.min_value, self.max_value)
-        return tf.stack([new_red, new_green, blue], axis=-1)
-
 # Input = (0, 1) or (0, 255)
 
 
