@@ -6,3 +6,4 @@ tensorflow-datasets
 tensorflow-addons
 wandb
 autopep8
+mediapipe==0.9.*
