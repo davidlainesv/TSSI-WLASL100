@@ -2,8 +2,8 @@ pandas
 scikit-learn==1.2.0
 mediapipe
 tensorflow==2.11.*
-tensorflow-datasets
-tensorflow-addons
+tensorflow-datasets==4.8.*
+tensorflow-addons==0.19.0
 wandb
 autopep8
 mediapipe==0.9.*
