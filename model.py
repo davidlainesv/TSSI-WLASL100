@@ -8,6 +8,7 @@ from tensorflow.keras.applications.densenet import preprocess_input as densenet1
 from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input as mobilenetv2_preprocess_input
 
+
 def build_densenet121_model(input_shape=[None, 181, 3], dropout=0,
                             optimizer=None, pretraining=True):
     # setup model

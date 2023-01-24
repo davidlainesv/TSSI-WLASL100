@@ -12,7 +12,7 @@ available_augmentations = {
     'scale': RandomScale(min_value=0.0, max_value=255.0, seed=1),
     'shift': RandomShift(min_value=0.0, max_value=255.0, seed=2),
     'flip': RandomFlip("horizontal", max_value=255.0, seed=3),
-    'rotation': RandomRotation(factor=[15.0], min_value=0.0, max_value=255.0, seed=4),
+    'rotation': RandomRotation(factor=15.0, min_value=0.0, max_value=255.0, seed=4),
     'speed': RandomSpeed(frames=128, seed=5)
 }
 

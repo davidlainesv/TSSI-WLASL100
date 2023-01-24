@@ -2,6 +2,7 @@ from tensorflow_addons.optimizers import TriangularCyclicalLearningRate
 from tensorflow_addons.optimizers import SGDW
 from tensorflow.keras.optimizers import SGD
 
+
 def build_sgd_optimizer(initial_learning_rate=0.001,
                         maximal_learning_rate=0.01,
                         step_size=50, momentum=0.0,

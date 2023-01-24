@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-"""LRRT-0_1to1_0-wo_pretraining-wth_augmentation.ipynb
-"""
-
 import argparse
 from config import INPUT_SHAPE, NUM_SPLITS, RANDOM_SEED
 from dataset import generate_dataset, augmentations_order
