@@ -1,5 +1,5 @@
 pandas
-scikit-learn==1.2.*
+scikit-learn==1.2.0
 mediapipe
 tensorflow==2.11.*
 tensorflow-datasets
