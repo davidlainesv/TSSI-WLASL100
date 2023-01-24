@@ -49,7 +49,6 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     print("[INFO] Configuration:", config, "\n")
 
     # select split (1...NUM_SPLITS)
-    print("Training on split {}".format(config["training"]["split"]))
     split_indices = splits[config["training"]["split"] - 1]
     train_indices, val_indices = split_indices
 
