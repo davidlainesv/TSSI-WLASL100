@@ -1,4 +1,5 @@
 import tensorflow as tf
+from config import INPUT_WIDTH
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Rescaling
 from data_augmentation import RandomFlip, RandomScale, RandomShift, RandomRotation, RandomSpeed
@@ -154,7 +155,7 @@ def generate_dataset(dataframe, training=False, video_ids=[],
         batch = train_preprocessing(batch)
         batch = train_augmentation(batch, training=True)
         x = train_length_normalization(batch)[0]
-        x = tf.ensure_shape(x, [128, 181, 3])
+        x = tf.ensure_shape(x, [128, INPUT_WIDTH, 3])
         return x, y
 
     # define the train map function
