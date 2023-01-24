@@ -3,7 +3,7 @@
 """
 
 import argparse
-from config import INPUT_SHAPE, NUM_SPLITS, RANDOM_SEED
+from config import INPUT_SHAPE, LEARNING_RATE_STEP, NUM_SPLITS, RANDOM_SEED
 from callbacks import LearningRateVsLossCallback
 from dataset import generate_dataset
 from sklearn.model_selection import StratifiedKFold
@@ -114,7 +114,8 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
 def agent_fn(config=None):
     run = wandb.init(config=config, reinit=True)
-    steps_per_epoch = np.ceil(num_train_examples / wandb.config.batch_size)
+    step_size = (wandb.config.initial_learning_rate - \
+        wandb.config.maximal_learning_rate) / LEARNING_RATE_STEP
     config = {
         'model': {
             'backbone': wandb.config.backbone,
@@ -127,14 +128,14 @@ def agent_fn(config=None):
             'momentum': wandb.config.momentum,
             'nesterov': wandb.config.nesterov,
             'weight_decay': wandb.config.weight_decay,
-            'step_size': wandb.config.num_epochs * steps_per_epoch
+            'step_size': step_size
         },
         'training': {
             'num_epochs': wandb.config.num_epochs,
             'train_batch_size': wandb.config.batch_size,
             'test_batch_size': wandb.config.batch_size,
             'augmentation':  wandb.config.augmentation,
-            'eval_each_steps': steps_per_epoch,
+            'eval_each_steps': 1,
             'split': wandb.config.split
         }
     }
