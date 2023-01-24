@@ -102,7 +102,8 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
     # train model
     model.fit(train_dataset,
-              epochs=config['training']['num_epochs'],
+              epochs=1,
+              steps_per_epoch=config["optimizer"]["step_size"],
               verbose=verbose,
               callbacks=[lrc])
 
@@ -114,8 +115,8 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
 def agent_fn(config=None):
     run = wandb.init(config=config, reinit=True)
-    step_size = (wandb.config.initial_learning_rate - \
-        wandb.config.maximal_learning_rate) / LEARNING_RATE_STEP
+    step_size = (wandb.config.initial_learning_rate -
+                 wandb.config.maximal_learning_rate) / LEARNING_RATE_STEP
     config = {
         'model': {
             'backbone': wandb.config.backbone,
@@ -131,7 +132,6 @@ def agent_fn(config=None):
             'step_size': step_size
         },
         'training': {
-            'num_epochs': wandb.config.num_epochs,
             'train_batch_size': wandb.config.batch_size,
             'test_batch_size': wandb.config.batch_size,
             'augmentation':  wandb.config.augmentation,
@@ -171,8 +171,7 @@ def main(args):
                 'weight_decay': {'values': [1e-4, 1e-5, 1e-6, 1e-7]},
                 'dropout': {'values': [0.1, 0.3, 0.5]},
                 'momentum': {'value': 0.9},
-                'nesterov': {'value': True},
-                'num_epochs': {'value': 50},
+                'nesterov': {'value': True}
             }
         }
         sweep_id = wandb.sweep(sweep=sweep_configuration,
