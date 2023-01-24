@@ -111,7 +111,7 @@ def generate_dataset(dataframe, training=False, video_ids=[],
                                      with_midhip=True)
 
     # retrieve the tree path
-    _, _, tree_path = tssi_v2(dataframe.columns)
+    _, _, tree_path = tssi_v2()
 
     # define the preprocessing
     # for the test dataset
