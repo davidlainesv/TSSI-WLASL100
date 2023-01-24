@@ -110,8 +110,8 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
 def agent_fn(config=None):
     run = wandb.init(config=config, reinit=True)
-    step_size = (wandb.config.initial_learning_rate -
-                 wandb.config.maximal_learning_rate) / LEARNING_RATE_STEP
+    step_size = int((wandb.config.initial_learning_rate -
+                 wandb.config.maximal_learning_rate) / LEARNING_RATE_STEP)
     config = {
         'model': {
             'backbone': wandb.config.backbone,
