@@ -98,7 +98,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     # train model
     model.fit(train_dataset,
               epochs=1,
-              steps_per_epoch=config["optimizer"]["step_size"],
+              steps_per_epoch=int(config["optimizer"]["step_size"]),
               verbose=verbose,
               callbacks=[lrc])
 
@@ -110,8 +110,8 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
 def agent_fn(config=None):
     run = wandb.init(config=config, reinit=True)
-    step_size = int((wandb.config.initial_learning_rate -
-                 wandb.config.maximal_learning_rate) / LEARNING_RATE_STEP)
+    step_size = (wandb.config.initial_learning_rate -
+                 wandb.config.maximal_learning_rate) / LEARNING_RATE_STEP
     config = {
         'model': {
             'backbone': wandb.config.backbone,
