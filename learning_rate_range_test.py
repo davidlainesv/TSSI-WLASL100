@@ -12,6 +12,8 @@ from optimizer import build_sgd_optimizer
 # Load data
 train_dataframe = pd.read_csv("wlasl100_skeletons_train.csv", index_col=0)
 validation_dataframe = pd.read_csv("wlasl100_skeletons_val.csv", index_col=0)
+dataset = SplitDataset(train_dataframe, validation_dataframe, num_splits=5)
+del train_dataframe, validation_dataframe
 
 
 def run_experiment(config=None, log_to_wandb=True, verbose=0):
@@ -26,8 +28,6 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
     # generate train dataset
     augmentations = "all" if config["training"]["augmentation"] else None
-    dataset = SplitDataset(
-        train_dataframe, validation_dataframe, num_splits=5)
     train_dataset = dataset.get_training_set(
         split=config["training"]["split"] - 1,
         batch_size=config["training"]['train_batch_size'],
