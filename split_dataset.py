@@ -134,7 +134,7 @@ class SplitDataset():
         skf = StratifiedKFold(num_splits)
         splits = list(
             skf.split(np.zeros(num_total_examples), labels))
-        num_train_examples = len(self.splits[0][0])
+        num_train_examples = len(splits[0][0])
 
         # expose variables
         self.joints_order = joints_order
@@ -145,8 +145,8 @@ class SplitDataset():
         self.num_train_examples = num_train_examples
 
     def get_training_set(self, split=1, batch_size=32,
-                             buffer_size=5000, deterministic=False,
-                             augmentations=None):
+                         buffer_size=5000, deterministic=False,
+                         augmentations=None):
         # obtain train indices
         split_indices = self.splits[split]
         train_indices = split_indices[0]
