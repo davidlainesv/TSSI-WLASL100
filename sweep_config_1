@@ -33,8 +33,6 @@ parameters:
     value: 0.9
   nesterov:
     value: true
-  num_epochs:
-    value: 50
   split:
     values:
       - 1
