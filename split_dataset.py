@@ -144,6 +144,11 @@ class SplitDataset():
         self.splits = splits
         self.num_train_examples = num_train_examples
 
+        # free memory
+        del train_dataframe
+        del validation_dataframe
+        del train_and_validation_dataframe
+
     def get_training_set(self, split=1, batch_size=32,
                          buffer_size=5000, deterministic=False,
                          augmentations=None):
