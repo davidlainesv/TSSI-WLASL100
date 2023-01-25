@@ -144,7 +144,7 @@ class SplitDataset():
         self.splits = splits
         self.num_train_examples = num_train_examples
 
-    def get_training_dataset(self, split=1, batch_size=32,
+    def get_training_set(self, split=1, batch_size=32,
                              buffer_size=5000, deterministic=False,
                              augmentations=None):
         # obtain train indices
@@ -198,7 +198,7 @@ class SplitDataset():
 
         return dataset
 
-    def get_validation_dataset(self, split=1, batch_size=32):
+    def get_testing_set(self, split=1, batch_size=32):
         # obtain train indices
         split_indices = self.splits[split]
         val_indices = split_indices[1]
