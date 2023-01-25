@@ -26,7 +26,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
     # generate train dataset
     augmentations = "all" if config["training"]["augmentation"] else None
-    dataset = SplitDataset(train_dataframe, validation_dataframe, splits=5)
+    dataset = SplitDataset(train_dataframe, validation_dataframe, num_splits=5)
     train_dataset = dataset.get_training_set(
         split=config["training"]["split"] - 1,
         batch_size=config["training"]['train_batch_size'],
@@ -61,10 +61,12 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
                                         dropout=config['model']['dropout'],
                                         optimizer=optimizer,
                                         pretraining=config['model']['pretraining'])
+    else:
+        return []
 
     # setup callback
     eval_each_steps = config["training"]['eval_each_steps']
-    stop_patience = np.ceil(dataset.num_training_examples /
+    stop_patience = np.ceil(dataset.num_train_examples /
                             config["training"]['train_batch_size']) * 5
     lrc = LearningRateVsLossCallback(
         validation_data=validation_dataset,
@@ -86,7 +88,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
 
 def agent_fn(config=None):
-    run = wandb.init(config=config, reinit=True)
+    wandb.init(config=config, reinit=True)
     step_size = (wandb.config.maximal_learning_rate -
                  wandb.config.initial_learning_rate) / LEARNING_RATE_STEP
     config = {
@@ -113,7 +115,7 @@ def agent_fn(config=None):
     }
 
     _ = run_experiment(config=config, log_to_wandb=True, verbose=0)
-    run.finish()
+    wandb.finish()
 
 
 def main(args):
