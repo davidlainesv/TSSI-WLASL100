@@ -112,7 +112,7 @@ class SplitDataset():
         # for the test dataset
         self.test_preprocessing = tf.keras.Sequential([
             tf.keras.layers.Rescaling(scale=255.0, offset=0.0),
-            PadIfLessThan(frames=128)
+            PadIfLessThan(frames=INPUT_HEIGHT)
         ], name="preprocessing")
 
         # generate train+validation dataframe
@@ -123,14 +123,12 @@ class SplitDataset():
 
         # preprocess the train+validation dataframe
         main_dataframe = preprocess_dataframe(train_and_validation_dataframe,
-                                         with_root=True,
-                                         with_midhip=True)
+                                              with_root=True,
+                                              with_midhip=False)
 
         # obtain characteristics of the dataset
-        num_total_examples = len(
-            train_and_validation_dataframe["video"].unique())
-        labels = train_and_validation_dataframe.groupby(
-            "video")["label"].unique().tolist()
+        num_total_examples = len(main_dataframe["video"].unique())
+        labels = main_dataframe.groupby("video")["label"].unique().tolist()
 
         # generate k-fold cross validator
         skf = StratifiedKFold(num_splits)
@@ -163,8 +161,8 @@ class SplitDataset():
         # NOTE: if applied, random speed augmentation
         # changes the length of the samples a priori
         train_length_normalization = tf.keras.Sequential([
-            PadIfLessThan(frames=128),
-            ResizeIfMoreThan(frames=128)
+            PadIfLessThan(frames=INPUT_HEIGHT),
+            ResizeIfMoreThan(frames=INPUT_HEIGHT)
         ], name="length_normalization")
 
         # define the list of augmentations
@@ -209,7 +207,7 @@ class SplitDataset():
         # for the test dataset
         test_preprocessing = tf.keras.Sequential([
             tf.keras.layers.Rescaling(scale=255.0, offset=0.0),
-            PadIfLessThan(frames=128)
+            PadIfLessThan(frames=INPUT_HEIGHT)
         ], name="preprocessing")
 
         # define the train map function
