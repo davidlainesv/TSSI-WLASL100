@@ -1,7 +1,7 @@
 import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import StratifiedKFold
-from config import INPUT_HEIGHT, INPUT_WIDTH
+from config import INPUT_HEIGHT, INPUT_WIDTH, RANDOM_SEED
 from data_augmentation import RandomFlip, RandomScale, RandomShift, RandomRotation, RandomSpeed
 from preprocessing import PadIfLessThan, ResizeIfMoreThan, preprocess_dataframe
 from skeleton_graph import tssi_v2
@@ -131,7 +131,7 @@ class SplitDataset():
         labels = main_dataframe.groupby("video")["label"].unique().tolist()
 
         # generate k-fold cross validator
-        skf = StratifiedKFold(num_splits)
+        skf = StratifiedKFold(num_splits, shuffle=True, random_state=RANDOM_SEED)
         splits = list(
             skf.split(np.zeros(num_total_examples), labels))
         num_train_examples = len(splits[0][0])
