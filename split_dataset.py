@@ -104,7 +104,7 @@ def generate_test_dataset(dataframe,
 
 
 class SplitDataset():
-    def __init__(self, train_dataframe, validation_dataframe, num_splits=None):
+    def __init__(self, train_dataframe, validation_dataframe, num_splits=None, repeat=False):
         # retrieve the joints order
         _, _, joints_order = tssi_v2()
 
@@ -143,6 +143,7 @@ class SplitDataset():
         self.labels = labels
         self.splits = splits
         self.num_train_examples = num_train_examples
+        self.repeat = repeat
 
         # free memory
         del train_dataframe
@@ -201,6 +202,9 @@ class SplitDataset():
                                          buffer_size=buffer_size,
                                          deterministic=deterministic)
 
+        if self.repeat:
+            dataset = dataset.repeat()
+
         return dataset
 
     def get_testing_set(self, split=1, batch_size=32):
@@ -228,4 +232,7 @@ class SplitDataset():
                                         test_map_fn,
                                         batch_size=batch_size)
 
+        if self.repeat:
+            dataset = dataset.repeat()
+            
         return dataset
