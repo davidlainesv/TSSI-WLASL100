@@ -50,6 +50,7 @@ def generate_train_dataset(dataframe,
                            columns,
                            video_ids,
                            train_map_fn,
+                           repeat=False,
                            batch_size=32,
                            buffer_size=5000,
                            deterministic=False):
@@ -70,6 +71,9 @@ def generate_train_dataset(dataframe,
                  deterministic=False) \
             .batch(batch_size) \
             .prefetch(tf.data.AUTOTUNE)
+
+    if repeat:
+        train_dataset = train_dataset.repeat()
 
     return train_dataset
 
@@ -104,7 +108,7 @@ def generate_test_dataset(dataframe,
 
 
 class SplitDataset():
-    def __init__(self, train_dataframe, validation_dataframe, num_splits=None, repeat=False):
+    def __init__(self, train_dataframe, validation_dataframe, num_splits=None):
         # retrieve the joints order
         _, _, joints_order = tssi_v2()
 
@@ -131,7 +135,8 @@ class SplitDataset():
         labels = main_dataframe.groupby("video")["label"].unique().tolist()
 
         # generate k-fold cross validator
-        skf = StratifiedKFold(num_splits, shuffle=True, random_state=RANDOM_SEED)
+        skf = StratifiedKFold(num_splits, shuffle=True,
+                              random_state=RANDOM_SEED)
         splits = list(
             skf.split(np.zeros(num_total_examples), labels))
         num_train_examples = len(splits[0][0])
@@ -143,7 +148,6 @@ class SplitDataset():
         self.labels = labels
         self.splits = splits
         self.num_train_examples = num_train_examples
-        self.repeat = repeat
 
         # free memory
         del train_dataframe
@@ -151,8 +155,8 @@ class SplitDataset():
         del train_and_validation_dataframe
 
     def get_training_set(self, split=1, batch_size=32,
-                         buffer_size=5000, deterministic=False,
-                         augmentations=None):
+                         buffer_size=5000, repeat=False,
+                         deterministic=False, augmentations=None):
         # obtain train indices
         split_indices = self.splits[split]
         train_indices = split_indices[0]
@@ -198,12 +202,10 @@ class SplitDataset():
                                          self.joints_order,
                                          train_indices,
                                          train_map_fn,
+                                         repeat=repeat,
                                          batch_size=batch_size,
                                          buffer_size=buffer_size,
                                          deterministic=deterministic)
-
-        if self.repeat:
-            dataset = dataset.repeat()
 
         return dataset
 
@@ -232,7 +234,4 @@ class SplitDataset():
                                         test_map_fn,
                                         batch_size=batch_size)
 
-        if self.repeat:
-            dataset = dataset.repeat()
-            
         return dataset

@@ -27,10 +27,11 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     # generate train dataset
     augmentations = "all" if config["training"]["augmentation"] else None
     dataset = SplitDataset(
-        train_dataframe, validation_dataframe, num_splits=5, repeat=True)
+        train_dataframe, validation_dataframe, num_splits=5)
     train_dataset = dataset.get_training_set(
         split=config["training"]["split"] - 1,
         batch_size=config["training"]['train_batch_size'],
+        repeat=True,
         buffer_size=5000,
         deterministic=True,
         augmentations=augmentations)
