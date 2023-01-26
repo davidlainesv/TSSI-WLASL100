@@ -1,5 +1,5 @@
 import argparse
-from config import INPUT_SHAPE, LEARNING_RATE_STEP, NUM_SPLITS, RANDOM_SEED, STOP_PATIENCE_EPOCHS
+from config import INPUT_SHAPE, LEARNING_RATE_STEP, LRRT_LOSS_MIN_DELTA, LRRT_STOP_FACTOR, LRRT_STOP_PATIENCE, NUM_SPLITS, RANDOM_SEED
 from callbacks import LearningRateVsLossCallback
 from split_dataset import SplitDataset
 import numpy as np
@@ -27,10 +27,10 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     print("[INFO] Configuration:", config, "\n")
 
     # generate train dataset
-    augmentations = "all" if config["training"]["augmentation"] else None
+    augmentations = "all" if config['training']['augmentation'] else None
     train_dataset = dataset.get_training_set(
-        split=config["training"]["split"] - 1,
-        batch_size=config["training"]['train_batch_size'],
+        split=config['training']['split'] - 1,
+        batch_size=config['training']['train_batch_size'],
         repeat=True,
         buffer_size=5000,
         deterministic=True,
@@ -38,8 +38,8 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
     # generate val dataset
     validation_dataset = dataset.get_testing_set(
-        split=config["training"]["split"] - 1,
-        batch_size=config["training"]['test_batch_size'])
+        split=config['training']['split'] - 1,
+        batch_size=config['training']['test_batch_size'])
 
     print("[INFO] Dataset Total examples:", dataset.num_total_examples)
     print("[INFO] Dataset Training examples:", dataset.num_train_examples)
@@ -67,18 +67,19 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
         return []
 
     # setup callback
-    eval_each_steps = config["training"]['eval_each_steps']
-    stop_patience = eval_each_steps * STOP_PATIENCE_EPOCHS
+    eval_each_steps = config['training']['eval_each_steps']
     lrc = LearningRateVsLossCallback(
         validation_data=validation_dataset,
         eval_each_steps=eval_each_steps,
-        stop_factor=4, stop_patience=stop_patience,
-        loss_min_delta=0.1, log_to_wandb=log_to_wandb)
+        stop_factor=LRRT_STOP_FACTOR,
+        stop_patience=LRRT_STOP_PATIENCE,
+        loss_min_delta=LRRT_LOSS_MIN_DELTA,
+        log_to_wandb=log_to_wandb)
 
     # train model
     model.fit(train_dataset,
               epochs=1,
-              steps_per_epoch=int(config["optimizer"]["step_size"]),
+              steps_per_epoch=int(config['optimizer']['step_size']),
               verbose=verbose,
               callbacks=[lrc])
 
