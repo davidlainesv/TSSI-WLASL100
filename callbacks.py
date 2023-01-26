@@ -2,7 +2,7 @@ import tensorflow as tf
 import wandb
 
 class LearningRateVsLossCallback(tf.keras.callbacks.Callback):
-    def __init__(self, validation_data=None, eval_each_steps=0,
+    def __init__(self, validation_data=None, eval_each_steps=1,
                  stop_factor=4, stop_patience=10, loss_min_delta=0.1,
                  log_to_wandb=False, add_to_log={}):
         super(LearningRateVsLossCallback, self).__init__()
@@ -55,7 +55,7 @@ class LearningRateVsLossCallback(tf.keras.callbacks.Callback):
         }
 
         if (self.validation_data is not None) \
-                and (self.eval_each_steps >= 0) \
+                and (self.eval_each_steps > 0) \
                 and (self.batch_num % self.eval_each_steps == 0):
             # grab the loss from the evaluation
             scores = self.model.evaluate(self.validation_data,
