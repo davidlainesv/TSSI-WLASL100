@@ -1,5 +1,5 @@
 import argparse
-from config import INPUT_SHAPE, LEARNING_RATE_STEP, NUM_SPLITS, RANDOM_SEED
+from config import INPUT_SHAPE, LEARNING_RATE_STEP, NUM_SPLITS, RANDOM_SEED, STOP_PATIENCE_EPOCHS
 from callbacks import LearningRateVsLossCallback
 from split_dataset import SplitDataset
 import numpy as np
@@ -68,8 +68,8 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
     # setup callback
     eval_each_steps = config["training"]['eval_each_steps']
-    stop_patience = np.ceil(dataset.num_train_examples /
-                            config["training"]['train_batch_size']) * 5
+    stop_patience = (np.ceil(dataset.num_train_examples /
+                     config["training"]['train_batch_size']) * STOP_PATIENCE_EPOCHS) // eval_each_steps
     lrc = LearningRateVsLossCallback(
         validation_data=validation_dataset,
         eval_each_steps=eval_each_steps,
