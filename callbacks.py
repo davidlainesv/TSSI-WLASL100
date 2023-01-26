@@ -2,7 +2,7 @@ import tensorflow as tf
 import wandb
 
 class LearningRateVsLossCallback(tf.keras.callbacks.Callback):
-    def __init__(self, validation_data=None, eval_each_steps=1,
+    def __init__(self, validation_data=None, eval_each_steps=10,
                  stop_factor=4, stop_patience=10, loss_min_delta=0.1,
                  log_to_wandb=False, add_to_log={}):
         super(LearningRateVsLossCallback, self).__init__()

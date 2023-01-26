@@ -172,7 +172,7 @@ if __name__ == "__main__":
     parser.add_argument('--lr_min', type=float, help='Minimum learning rate')
     parser.add_argument('--lr_max', type=float, help='Minimum learning rate')
     parser.add_argument('--eval_each_steps', type=int,
-                        help='Evaluate each steps', default=1)
+                        help='Evaluate each steps', default=10)
     args = parser.parse_args()
 
     if args.sweep_id is None:
