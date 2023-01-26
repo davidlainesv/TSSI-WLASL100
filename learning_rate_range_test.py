@@ -68,8 +68,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
     # setup callback
     eval_each_steps = config["training"]['eval_each_steps']
-    stop_patience = (np.ceil(dataset.num_train_examples /
-                     config["training"]['train_batch_size']) * STOP_PATIENCE_EPOCHS) // eval_each_steps
+    stop_patience = eval_each_steps * STOP_PATIENCE_EPOCHS
     lrc = LearningRateVsLossCallback(
         validation_data=validation_dataset,
         eval_each_steps=eval_each_steps,
@@ -93,6 +92,8 @@ def agent_fn(config=None):
     wandb.init(config=config, reinit=True)
     step_size = (wandb.config.maximal_learning_rate -
                  wandb.config.initial_learning_rate) / LEARNING_RATE_STEP
+    eval_each_steps = np.ceil(dataset.num_train_examples /
+                              config["training"]['train_batch_size'])
     config = {
         'model': {
             'backbone': wandb.config.backbone,
@@ -111,7 +112,7 @@ def agent_fn(config=None):
             'train_batch_size': wandb.config.batch_size,
             'test_batch_size': wandb.config.batch_size,
             'augmentation':  wandb.config.augmentation,
-            'eval_each_steps': wandb.config.eval_each_steps,
+            'eval_each_steps': eval_each_steps,
             'split': wandb.config.split
         }
     }
@@ -129,7 +130,6 @@ def main(args):
     backbone = args.backbone
     augmentation = args.augmentation
     pretraining = args.pretraining
-    eval_each_steps = args.eval_each_steps
 
     if sweep_id is None:
         sweep_configuration = {
@@ -148,8 +148,7 @@ def main(args):
                 'weight_decay': {'values': [1e-4, 1e-5, 1e-6, 1e-7]},
                 'dropout': {'values': [0.1, 0.3, 0.5]},
                 'momentum': {'value': 0.9},
-                'nesterov': {'value': True},
-                'eval_each_steps': {'value': eval_each_steps}
+                'nesterov': {'value': True}
             }
         }
         sweep_id = wandb.sweep(sweep=sweep_configuration,
@@ -171,8 +170,6 @@ if __name__ == "__main__":
     parser.add_argument('--augmentation', type=bool, help='Add augmentation')
     parser.add_argument('--lr_min', type=float, help='Minimum learning rate')
     parser.add_argument('--lr_max', type=float, help='Minimum learning rate')
-    parser.add_argument('--eval_each_steps', type=int,
-                        help='Evaluate each steps', default=10)
     args = parser.parse_args()
 
     if args.sweep_id is None:
