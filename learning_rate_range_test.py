@@ -111,7 +111,7 @@ def agent_fn(config=None):
             'train_batch_size': wandb.config.batch_size,
             'test_batch_size': wandb.config.batch_size,
             'augmentation':  wandb.config.augmentation,
-            'eval_each_steps': 1,
+            'eval_each_steps': wandb.config.eval_each_steps,
             'split': wandb.config.split
         }
     }
@@ -129,6 +129,7 @@ def main(args):
     backbone = args.backbone
     augmentation = args.augmentation
     pretraining = args.pretraining
+    eval_each_steps = args.eval_each_steps
 
     if sweep_id is None:
         sweep_configuration = {
@@ -147,7 +148,8 @@ def main(args):
                 'weight_decay': {'values': [1e-4, 1e-5, 1e-6, 1e-7]},
                 'dropout': {'values': [0.1, 0.3, 0.5]},
                 'momentum': {'value': 0.9},
-                'nesterov': {'value': True}
+                'nesterov': {'value': True},
+                'eval_each_steps': {'value': eval_each_steps}
             }
         }
         sweep_id = wandb.sweep(sweep=sweep_configuration,
@@ -169,6 +171,8 @@ if __name__ == "__main__":
     parser.add_argument('--augmentation', type=bool, help='Add augmentation')
     parser.add_argument('--lr_min', type=float, help='Minimum learning rate')
     parser.add_argument('--lr_max', type=float, help='Minimum learning rate')
+    parser.add_argument('--eval_each_steps', type=int,
+                        help='Evaluate each steps', default=1)
     args = parser.parse_args()
 
     if args.sweep_id is None:
@@ -182,6 +186,7 @@ if __name__ == "__main__":
             raise Exception("Please provide lr_min")
         if args.lr_max is None:
             raise Exception("Please provide lr_max")
+
         print(args.entity, args.project, args.backbone,
               args.augmentation, args.lr_min, args.lr_max)
 
