@@ -93,7 +93,7 @@ def agent_fn(config=None):
     step_size = (wandb.config.maximal_learning_rate -
                  wandb.config.initial_learning_rate) / LEARNING_RATE_STEP
     eval_each_steps = np.ceil(dataset.num_train_examples /
-                              config["training"]['train_batch_size'])
+                              wandb.config.batch_size)
     config = {
         'model': {
             'backbone': wandb.config.backbone,
