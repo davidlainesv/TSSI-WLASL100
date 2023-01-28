@@ -104,7 +104,7 @@ class Graph:
         # For every node of the graph
         for i in range(self.num_nodes):
             if self.adj[start_idx][i] == 1 and not visited[i]:
-                path = path + self.visit(i, visited) + [start_idx]
+                path = path + self.visit_by_index(i, visited) + [start_idx]
 
         return path
 
