@@ -1,7 +1,10 @@
 import tensorflow as tf
+from config import INPUT_WIDTH
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Rescaling
-from tssi_utils import RandomFlip, RandomScale, RandomShift, RandomRotation, RandomSpeed, PadIfLessThan, ResizeIfMoreThan, preprocess_dataframe, tssi_v4
+from data_augmentation import RandomFlip, RandomScale, RandomShift, RandomRotation, RandomSpeed
+from preprocessing import PadIfLessThan, ResizeIfMoreThan, preprocess_dataframe
+from skeleton_graph import tssi_v2
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
 
@@ -10,7 +13,7 @@ available_augmentations = {
     'scale': RandomScale(min_value=0.0, max_value=255.0, seed=1),
     'shift': RandomShift(min_value=0.0, max_value=255.0, seed=2),
     'flip': RandomFlip("horizontal", max_value=255.0, seed=3),
-    'rotation': RandomRotation(factor=[15.0], min_value=0.0, max_value=255.0, seed=4),
+    'rotation': RandomRotation(factor=15.0, min_value=0.0, max_value=255.0, seed=4),
     'speed': RandomSpeed(frames=128, seed=5)
 }
 
@@ -20,7 +23,7 @@ augmentations_order = ['scale', 'shift', 'flip', 'rotation', 'speed']
 def dataframe_to_dataset(dataframe, columns, filter_video_ids=[]):
     x_sorted_columns = [col + "_x" for col in columns]
     y_sorted_columns = [col + "_y" for col in columns]
-    
+
     enc = OneHotEncoder()
 
     if len(filter_video_ids) > 0:
@@ -101,15 +104,15 @@ def generate_test_dataset(dataframe,
 
 
 def generate_dataset(dataframe, training=False, video_ids=[],
-                       batch_size=32, buffer_size=5000, deterministic=False,
-                       augmentations=None):
+                     batch_size=32, buffer_size=5000, deterministic=False,
+                     augmentations=None):
     # preprocess the source dataframe
     dataframe = preprocess_dataframe(dataframe,
                                      with_root=True,
                                      with_midhip=True)
 
     # retrieve the tree path
-    graph, tree_path = tssi_v4(dataframe.columns)
+    _, _, tree_path = tssi_v2()
 
     # define the preprocessing
     # for the test dataset
@@ -123,12 +126,12 @@ def generate_dataset(dataframe, training=False, video_ids=[],
     train_preprocessing = Sequential([
         Rescaling(scale=255.0, offset=0.0),
     ], name="preprocessing")
-    
+
     # define the list of augmentations
     # in the default order
     if augmentations == "all":
         augmentations = augmentations_order
-        
+
     if augmentations == None:
         augmentations = []
 
@@ -136,7 +139,7 @@ def generate_dataset(dataframe, training=False, video_ids=[],
     # based on the list of augmentations
     layers = [available_augmentations[aug] for aug in augmentations]
     train_augmentation = Sequential(layers, name="augmentation")
-    
+
     # define length_normalization layers
     # NOTE: if applied, random speed augmentation
     # changes the length of the samples a priori
@@ -152,7 +155,7 @@ def generate_dataset(dataframe, training=False, video_ids=[],
         batch = train_preprocessing(batch)
         batch = train_augmentation(batch, training=True)
         x = train_length_normalization(batch)[0]
-        x = tf.ensure_shape(x, [128, 181, 3])
+        x = tf.ensure_shape(x, [128, INPUT_WIDTH, 3])
         return x, y
 
     # define the train map function
