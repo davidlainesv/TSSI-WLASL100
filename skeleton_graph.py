@@ -48,16 +48,17 @@ class FaceLandmark(IntEnum):
 
 class Graph:
     def __init__(self, nodes, edges=[]):
-        self.nodes = nodes
+        self.nodes = nodes.copy()
         self.num_nodes = len(nodes)
-        self.edges = edges
+        self.edges = edges.copy()
         self.num_edges = len(edges)
         self.adj = [[0 for _ in range(self.num_nodes)]
                     for _ in range(self.num_nodes)]
         for a, b in edges:
-            self.nodes.index(a)
-            self.adj[a][b] = 1
-            self.adj[b][a] = 1
+            a_idx = self.nodes.index(a)
+            b_idx = self.nodes.index(b)
+            self.adj[a_idx][b_idx] = 1
+            self.adj[b_idx][a_idx] = 1
 
     # Function to add a bidirectional edge to the graph
     def add_edge(self, start, end):
