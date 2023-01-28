@@ -47,64 +47,77 @@ class FaceLandmark(IntEnum):
 
 
 class Graph:
-    def __init__(self, nodes):
+    def __init__(self, nodes, edges=[]):
         self.nodes = nodes
         self.num_nodes = len(nodes)
-        self.adj = [[0 for i in range(self.num_nodes)]
-                    for j in range(self.num_nodes)]
+        self.edges = edges
+        self.num_edges = len(edges)
+        self.adj = [[0 for _ in range(self.num_nodes)]
+                    for _ in range(self.num_nodes)]
+        for a, b in edges:
+            self.nodes.index(a)
+            self.adj[a][b] = 1
+            self.adj[b][a] = 1
 
-    # Function to add an edge to the graph
-    # Considering a bidirectional edge
+    # Function to add a bidirectional edge to the graph
     def add_edge(self, start, end):
-        start_idx = self.nodes.index(start)
-        end_idx = self.nodes.index(end)
-        self.adj[start_idx][end_idx] = 1
-        self.adj[end_idx][start_idx] = 1
+        a_idx = self.nodes.index(start)
+        b_idx = self.nodes.index(end)
+        self.adj[a_idx][b_idx] = 1
+        self.adj[b_idx][a_idx] = 1
+        self.edges.append((start, end))
 
-    # Function to remove an edge to the graph
-    # Considering a bidirectional edge
+    # Function to remove a bidirectional edge to the graph
     def remove_edge(self, start, end):
-        start_idx = self.nodes.index(start)
-        end_idx = self.nodes.index(end)
-        self.adj[start_idx][end_idx] = 0
-        self.adj[end_idx][start_idx] = 0
+        a_idx = self.nodes.index(start)
+        b_idx = self.nodes.index(end)
+        self.adj[a_idx][b_idx] = 0
+        self.adj[b_idx][a_idx] = 0
+        idx = self.edges.index((start, end))
+        del self.edges[idx]
 
-    # Function to add an edge to the graph by index
-    # Considering a bidirectional edge
-    def add_edge_by_index(self, start, end):
-        self.adj[start][end] = 1
-        self.adj[end][start] = 1
+    # Function to add a bidirectional edge to the graph by index
+    def add_edge_by_index(self, a_idx, b_idx):
+        a = self.nodes[a_idx]
+        b = self.nodes[b_idx]
+        self.adj[a_idx][b_idx] = 1
+        self.adj[b_idx][a_idx] = 1
+        self.edges.append((a, b))
 
-    # Function to remove an edge to the graph by index
-    # Considering a bidirectional edge
-    def remove_edge_by_index(self, start, end):
-        self.adj[start][end] = 0
-        self.adj[end][start] = 0
+    # Function to remove a bidirectional edge to the graph by index
+    def remove_edge_by_index(self, a_idx, b_idx):
+        a = self.nodes[a_idx]
+        b = self.nodes[b_idx]
+        self.adj[a_idx][b_idx] = 0
+        self.adj[b_idx][a_idx] = 0
+        idx = self.edges.index((a, b))
+        del self.edges[idx]
 
-    def visit(self, start, visited):
+    # Function to visit a node
+    def visit_by_index(self, start_idx, visited):
         # Init path with the start node
-        path = [start]
+        path = [start_idx]
 
         # Set current node as visited
-        visited[start] = True
+        visited[start_idx] = True
 
         # For every node of the graph
         for i in range(self.num_nodes):
-            if self.adj[start][i] == 1 and not visited[i]:
-                path = path + self.visit(i, visited) + [start]
+            if self.adj[start_idx][i] == 1 and not visited[i]:
+                path = path + self.visit(i, visited) + [start_idx]
 
         return path
 
     # Function to perform DFS on the graph
     # Returns a list of nodes' indexes
-    def dfs_by_index(self, start):
+    def dfs_by_index(self, start_idx):
         paths = []
         visited = [False] * self.num_nodes
 
         while True:
-            paths.append(self.visit(start, visited))
+            paths.append(self.visit_by_index(start_idx, visited))
             if False in visited:
-                start = visited.index(False)
+                start_idx = visited.index(False)
             else:
                 break
 
