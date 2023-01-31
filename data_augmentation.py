@@ -135,7 +135,7 @@ class RandomRotation(tf.keras.layers.Layer):
         angle = degree * math.pi / 180.0
 
         [red, green, blue] = tf.unstack(image, axis=-1)
-        mid_value = (self.max_value - self.min_value) / 2
+        mid_value = self.min_value + (self.max_value - self.min_value) / 2
         new_red = mid_value + \
             tf.math.cos(angle) * (red - mid_value) - \
             tf.math.sin(angle) * (green - mid_value)
