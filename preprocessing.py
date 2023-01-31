@@ -35,10 +35,10 @@ def preprocess_dataframe(dataframe, with_root=True, with_midhip=False):
 
     # Select xy columns
     centered_data = dataframe.copy()
-    centered_data[x_columns] = centered_data[x_columns] - \
-        dataframe['root_x'].to_numpy()[:, np.newaxis]
-    centered_data[y_columns] = centered_data[y_columns] - \
-        dataframe['root_y'].to_numpy()[:, np.newaxis]
+    # centered_data[x_columns] = centered_data[x_columns] - \
+    #     dataframe['root_x'].to_numpy()[:, np.newaxis]
+    # centered_data[y_columns] = centered_data[y_columns] - \
+    #     dataframe['root_y'].to_numpy()[:, np.newaxis]
 
     # Replace left hand columns with the left wrist coordinates
     no_left_hand_mask = np.all(centered_data[left_hand_columns].isna(), axis=1)
