@@ -12,8 +12,10 @@ def preprocess_dataframe(dataframe, with_root=True, with_midhip=False):
         column for column in dataframe.columns if "leftHand" in column]
     right_hand_columns = [
         column for column in dataframe.columns if "rightHand" in column]
-    left_wrist_columns = ["pose_15_x", "pose_15_y"]
-    right_wrist_columns = ["pose_16_x", "pose_16_y"]
+    left_wrist_columns = ['leftHand_' + str(int(PoseLandmark.LEFT_WRIST)) +
+                          '_x', 'leftHand_' + str(int(PoseLandmark.LEFT_WRIST)) + '_y']
+    right_wrist_columns = ['rightHand_' + str(int(PoseLandmark.RIGHT_WRIST)) +
+                           '_x', 'rightHand_' + str(int(PoseLandmark.RIGHT_WRIST)) + '_y']
     face_columns = [column for column in dataframe.columns if "face" in column]
     nose_columns = ["pose_0_x", "pose_0_y"]
 
@@ -54,13 +56,15 @@ def preprocess_dataframe(dataframe, with_root=True, with_midhip=False):
     centered_data.loc[no_face_mask, face_columns] = np.tile(
         centered_data.loc[no_face_mask, nose_columns], int(len(face_columns) / 2))
 
-    # Scale data
+    # Normalize data
     repetitions = centered_data.groupby("video").size()
     max_per_video = centered_data.abs().groupby(
         "video")[xy_columns].max().max(axis=1)
     max_per_video_repeated = max_per_video.repeat(
         repetitions).to_numpy()[:, np.newaxis]
-    normalized_data = centered_data / max_per_video_repeated
+    normalized_data = centered_data.copy()
+    normalized_data[xy_columns] = normalized_data[xy_columns] / \
+        max_per_video_repeated
 
     return normalized_data
 
