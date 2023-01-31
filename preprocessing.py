@@ -225,34 +225,6 @@ def preprocess_dataframe_legacy(dataframe, with_root=True, with_midhip=True):
     return full_data
 
 
-class ScaleInvariant(tf.keras.layers.Layer):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    @tf.function
-    def call(self, images):
-        height = tf.shape(images)[1]
-        width = tf.shape(images)[2]
-        height_pad = tf.math.maximum(0, self.frames - height)
-        paddings = [[0, 0], [0, height_pad], [0, 0], [0, 0]]
-        padded_images = tf.pad(images, paddings, "CONSTANT")
-        return padded_images
-
-
-class ScaleInvariant(tf.keras.layers.Layer):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    @tf.function
-    def call(self, images):
-        height = tf.shape(images)[1]
-        width = tf.shape(images)[2]
-        height_pad = tf.math.maximum(0, self.frames - height)
-        paddings = [[0, 0], [0, height_pad], [0, 0], [0, 0]]
-        padded_images = tf.pad(images, paddings, "CONSTANT")
-        return padded_images
-
-
 class PadIfLessThan(tf.keras.layers.Layer):
     def __init__(self, frames=128, **kwargs):
         super().__init__(**kwargs)
