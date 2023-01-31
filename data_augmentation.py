@@ -149,9 +149,10 @@ class RandomRotation(tf.keras.layers.Layer):
 
 
 class RandomFlip(tf.keras.layers.Layer):
-    def __init__(self, mode, max_value=255.0, seed=None, debug=False, **kwargs):
+    def __init__(self, mode, min_value=0.0, max_value=255.0, seed=None, debug=False, **kwargs):
         super().__init__(**kwargs)
         self.mode = mode
+        self.min_value = min_value
         self.max_value = max_value
         self.seed = seed
         self.debug = debug
@@ -167,10 +168,12 @@ class RandomFlip(tf.keras.layers.Layer):
             rand > 0.5, tf.equal(self.mode, 'horizontal'))
         flip_vertical = tf.logical_and(
             rand > 0.5, tf.equal(self.mode, 'vertical'))
+        add_factor = (self.min_value +
+                      (self.max_value - self.min_value) / 2) * 2
         new_red = tf.cond(
-            flip_horizontal, lambda: tf.add(-red, self.max_value), lambda: red)
+            flip_horizontal, lambda: tf.add(-red, add_factor), lambda: red)
         new_green = tf.cond(
-            flip_vertical, lambda: tf.add(-green, self.max_value), lambda: green)
+            flip_vertical, lambda: tf.add(-green, add_factor), lambda: green)
 
         if self.debug:
             tf.print("flip", rand)
