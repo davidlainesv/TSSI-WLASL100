@@ -56,22 +56,6 @@ def preprocess_dataframe(dataframe, with_root=True, with_midhip=False):
     centered_data.loc[no_face_mask, face_columns] = np.tile(
         centered_data.loc[no_face_mask, nose_columns], int(len(face_columns) / 2))
 
-    # Move in the x-axis
-    x_coordinate_smaller_than_0_mask = np.any(
-        centered_data[x_columns] < 0, axis=1)
-    x_offset = centered_data[x_coordinate_smaller_than_0_mask][x_columns].min(
-        axis=1).abs().values[:, np.newaxis]
-    centered_data.loc[x_coordinate_smaller_than_0_mask,
-                      x_columns] = centered_data.loc[x_coordinate_smaller_than_0_mask, x_columns] + x_offset
-
-    # Move in the y-axis
-    y_coordinate_smaller_than_0_mask = np.any(
-        centered_data[y_columns] < 0, axis=1)
-    y_offset = centered_data[y_coordinate_smaller_than_0_mask][y_columns].min(
-        axis=1).abs().values[:, np.newaxis]
-    centered_data.loc[y_coordinate_smaller_than_0_mask,
-                      y_columns] = centered_data.loc[y_coordinate_smaller_than_0_mask, y_columns] + y_offset
-
     # Normalize data
     repetitions = centered_data.groupby("video").size()
     max_per_video = centered_data.abs().groupby(
@@ -85,7 +69,7 @@ def preprocess_dataframe(dataframe, with_root=True, with_midhip=False):
     return normalized_data
 
 
-def preprocess_dataframe_2(dataframe, with_root=True, with_midhip=False):
+def preprocess_dataframe_from0_to_1(dataframe, with_root=True, with_midhip=False):
     x_columns = dataframe.columns[3::2]
     y_columns = dataframe.columns[4::2]
     xy_columns = dataframe.columns[3:]
@@ -136,6 +120,22 @@ def preprocess_dataframe_2(dataframe, with_root=True, with_midhip=False):
     no_face_mask = np.all(centered_data[face_columns].isna(), axis=1)
     centered_data.loc[no_face_mask, face_columns] = np.tile(
         centered_data.loc[no_face_mask, nose_columns], int(len(face_columns) / 2))
+
+    # Move in the x-axis
+    x_coordinate_smaller_than_0_mask = np.any(
+        centered_data[x_columns] < 0, axis=1)
+    x_offset = centered_data[x_coordinate_smaller_than_0_mask][x_columns].min(
+        axis=1).abs().values[:, np.newaxis]
+    centered_data.loc[x_coordinate_smaller_than_0_mask,
+                      x_columns] = centered_data.loc[x_coordinate_smaller_than_0_mask, x_columns] + x_offset
+
+    # Move in the y-axis
+    y_coordinate_smaller_than_0_mask = np.any(
+        centered_data[y_columns] < 0, axis=1)
+    y_offset = centered_data[y_coordinate_smaller_than_0_mask][y_columns].min(
+        axis=1).abs().values[:, np.newaxis]
+    centered_data.loc[y_coordinate_smaller_than_0_mask,
+                      y_columns] = centered_data.loc[y_coordinate_smaller_than_0_mask, y_columns] + y_offset
 
     # Normalize data
     repetitions = centered_data.groupby("video").size()
