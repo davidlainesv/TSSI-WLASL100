@@ -10,10 +10,10 @@ import numpy as np
 
 
 available_augmentations = {
-    'scale': RandomScale(min_value=0.0, max_value=255.0, seed=1),
-    'shift': RandomShift(min_value=0.0, max_value=255.0, seed=2),
-    'flip': RandomFlip("horizontal", max_value=255.0, seed=3),
-    'rotation': RandomRotation(factor=15.0, min_value=0.0, max_value=255.0, seed=4),
+    'scale': RandomScale(min_value=-1.0, max_value=1.0, seed=1),
+    'shift': RandomShift(min_value=-1.0, max_value=1.0, seed=2),
+    'flip': RandomFlip("horizontal", min_value=-1.0, max_value=1.0, seed=3),
+    'rotation': RandomRotation(factor=15.0, min_value=-1.0, max_value=1.0, seed=4),
     'speed': RandomSpeed(frames=128, seed=5)
 }
 
@@ -164,9 +164,9 @@ class SplitDataset():
 
         # define preprocessing
         # for the train dataset
-        train_preprocessing = tf.keras.Sequential([
-            tf.keras.layers.Rescaling(scale=255.0, offset=0.0),
-        ], name="preprocessing")
+        # train_preprocessing = tf.keras.Sequential([
+        #     tf.keras.layers.Rescaling(scale=255.0, offset=0.0),
+        # ], name="preprocessing")
 
         # define length_normalization layers
         # NOTE: if applied, random speed augmentation
@@ -193,7 +193,7 @@ class SplitDataset():
         @tf.function
         def train_map_fn(x, y):
             batch = tf.expand_dims(x, axis=0)
-            batch = train_preprocessing(batch)
+            # batch = train_preprocessing(batch)
             batch = train_augmentation(batch, training=True)
             x = train_length_normalization(batch)[0]
             x = tf.ensure_shape(x, [INPUT_HEIGHT, INPUT_WIDTH, 3])
@@ -218,7 +218,7 @@ class SplitDataset():
         # define the preprocessing
         # for the test dataset
         test_preprocessing = tf.keras.Sequential([
-            tf.keras.layers.Rescaling(scale=255.0, offset=0.0),
+            # tf.keras.layers.Rescaling(scale=255.0, offset=0.0),
             PadIfLessThan(frames=INPUT_HEIGHT)
         ], name="preprocessing")
 
