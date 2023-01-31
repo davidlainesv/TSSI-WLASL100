@@ -17,7 +17,8 @@ available_augmentations = {
     'speed': RandomSpeed(frames=128, seed=5)
 }
 
-augmentations_order = ['scale', 'shift', 'flip', 'rotation', 'speed']
+augmentations_order_legacy = ['scale', 'shift', 'flip', 'rotation', 'speed']
+augmentations_order = ['flip', 'rotation', 'speed']
 
 
 def dataframe_to_dataset(dataframe, columns, filter_video_ids=[]):
