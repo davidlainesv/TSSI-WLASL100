@@ -113,13 +113,6 @@ class SplitDataset():
         # retrieve the joints order
         _, _, joints_order = tssi_v2()
 
-        # define the preprocessing
-        # for the test dataset
-        self.test_preprocessing = tf.keras.Sequential([
-            tf.keras.layers.Rescaling(scale=255.0, offset=0.0),
-            PadIfLessThan(frames=INPUT_HEIGHT)
-        ], name="preprocessing")
-
         # generate train+validation dataframe
         validation_dataframe["video"] = validation_dataframe["video"] + \
             train_dataframe["video"].max() + 1
@@ -130,6 +123,9 @@ class SplitDataset():
         main_dataframe = preprocess_dataframe(train_and_validation_dataframe,
                                               with_root=True,
                                               with_midhip=False)
+
+        print("[INFO] min:", main_dataframe.min().min(),
+              "max:", main_dataframe.max().max())
 
         # obtain characteristics of the dataset
         num_total_examples = len(main_dataframe["video"].unique())
