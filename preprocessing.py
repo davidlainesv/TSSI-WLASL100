@@ -12,10 +12,10 @@ def preprocess_dataframe(dataframe, with_root=True, with_midhip=False):
         column for column in dataframe.columns if "leftHand" in column]
     right_hand_columns = [
         column for column in dataframe.columns if "rightHand" in column]
-    left_wrist_columns = ['leftHand_' + str(int(PoseLandmark.LEFT_WRIST)) +
-                          '_x', 'leftHand_' + str(int(PoseLandmark.LEFT_WRIST)) + '_y']
-    right_wrist_columns = ['rightHand_' + str(int(PoseLandmark.RIGHT_WRIST)) +
-                           '_x', 'rightHand_' + str(int(PoseLandmark.RIGHT_WRIST)) + '_y']
+    left_wrist_columns = ['pose_' + str(int(PoseLandmark.LEFT_WRIST)) +
+                          '_x', 'pose_' + str(int(PoseLandmark.LEFT_WRIST)) + '_y']
+    right_wrist_columns = ['pose_' + str(int(PoseLandmark.RIGHT_WRIST)) +
+                           '_x', 'pose_' + str(int(PoseLandmark.RIGHT_WRIST)) + '_y']
     face_columns = [column for column in dataframe.columns if "face" in column]
     nose_columns = ["pose_0_x", "pose_0_y"]
 
@@ -35,10 +35,10 @@ def preprocess_dataframe(dataframe, with_root=True, with_midhip=False):
 
     # Select xy columns
     centered_data = dataframe.copy()
-    # centered_data[x_columns] = centered_data[x_columns] - \
-    #     dataframe['root_x'].to_numpy()[:, np.newaxis]
-    # centered_data[y_columns] = centered_data[y_columns] - \
-    #     dataframe['root_y'].to_numpy()[:, np.newaxis]
+    centered_data[x_columns] = centered_data[x_columns] - \
+        dataframe['root_x'].to_numpy()[:, np.newaxis]
+    centered_data[y_columns] = centered_data[y_columns] - \
+        dataframe['root_y'].to_numpy()[:, np.newaxis]
 
     # Replace left hand columns with the left wrist coordinates
     no_left_hand_mask = np.all(centered_data[left_hand_columns].isna(), axis=1)
