@@ -2,9 +2,19 @@ import tensorflow as tf
 import numpy as np
 import pandas as pd
 from mediapipe.python.solutions.pose import PoseLandmark
+from core import Normalization
 
 
-def preprocess_dataframe(dataframe, with_root=True, with_midhip=False):
+def preprocess_dataframe(dataframe, with_root=True, with_midhip=False, normalization=Normalization.Neg1To1):
+    if normalization == Normalization.Neg1To1:
+        return preprocess_dataframe_from_neg1_to_1(dataframe, with_root, with_midhip)
+    elif normalization == Normalization.ZeroTo1:
+        return preprocess_dataframe_from_0_to_1(dataframe, with_root, with_midhip)
+    else:
+        return preprocess_dataframe_legacy(dataframe, with_root, with_midhip)
+
+
+def preprocess_dataframe_from_neg1_to_1(dataframe, with_root=True, with_midhip=False):
     x_columns = dataframe.columns[3::2]
     y_columns = dataframe.columns[4::2]
     xy_columns = dataframe.columns[3:]
@@ -12,12 +22,16 @@ def preprocess_dataframe(dataframe, with_root=True, with_midhip=False):
         column for column in dataframe.columns if "leftHand" in column]
     right_hand_columns = [
         column for column in dataframe.columns if "rightHand" in column]
-    left_wrist_columns = ['pose_' + str(int(PoseLandmark.LEFT_WRIST)) +
-                          '_x', 'pose_' + str(int(PoseLandmark.LEFT_WRIST)) + '_y']
-    right_wrist_columns = ['pose_' + str(int(PoseLandmark.RIGHT_WRIST)) +
-                           '_x', 'pose_' + str(int(PoseLandmark.RIGHT_WRIST)) + '_y']
+    left_wrist_columns = [
+        'pose_' + str(int(PoseLandmark.LEFT_WRIST)) + '_x',
+        'pose_' + str(int(PoseLandmark.LEFT_WRIST)) + '_y']
+    right_wrist_columns = [
+        'pose_' + str(int(PoseLandmark.RIGHT_WRIST)) + '_x',
+        'pose_' + str(int(PoseLandmark.RIGHT_WRIST)) + '_y']
     face_columns = [column for column in dataframe.columns if "face" in column]
-    nose_columns = ["pose_0_x", "pose_0_y"]
+    nose_columns = [
+        "pose_" + str(int(PoseLandmark.NOSE)) + "_x",
+        "pose_" + str(int(PoseLandmark.NOSE)) + "_y"]
 
     # Add root column
     if with_root:
@@ -69,7 +83,7 @@ def preprocess_dataframe(dataframe, with_root=True, with_midhip=False):
     return normalized_data
 
 
-def preprocess_dataframe_from0_to_1(dataframe, with_root=True, with_midhip=False):
+def preprocess_dataframe_from_0_to_1(dataframe, with_root=True, with_midhip=False):
     x_columns = dataframe.columns[3::2]
     y_columns = dataframe.columns[4::2]
     xy_columns = dataframe.columns[3:]
@@ -77,12 +91,16 @@ def preprocess_dataframe_from0_to_1(dataframe, with_root=True, with_midhip=False
         column for column in dataframe.columns if "leftHand" in column]
     right_hand_columns = [
         column for column in dataframe.columns if "rightHand" in column]
-    left_wrist_columns = ['leftHand_' + str(int(PoseLandmark.LEFT_WRIST)) +
-                          '_x', 'leftHand_' + str(int(PoseLandmark.LEFT_WRIST)) + '_y']
-    right_wrist_columns = ['rightHand_' + str(int(PoseLandmark.RIGHT_WRIST)) +
-                           '_x', 'rightHand_' + str(int(PoseLandmark.RIGHT_WRIST)) + '_y']
+    left_wrist_columns = [
+        'leftHand_' + str(int(PoseLandmark.LEFT_WRIST)) + '_x',
+        'leftHand_' + str(int(PoseLandmark.LEFT_WRIST)) + '_y']
+    right_wrist_columns = [
+        'rightHand_' + str(int(PoseLandmark.RIGHT_WRIST)) + '_x',
+        'rightHand_' + str(int(PoseLandmark.RIGHT_WRIST)) + '_y']
     face_columns = [column for column in dataframe.columns if "face" in column]
-    nose_columns = ["pose_0_x", "pose_0_y"]
+    nose_columns = [
+        "pose_" + str(int(PoseLandmark.NOSE)) + "_x",
+        "pose_" + str(int(PoseLandmark.NOSE)) + "_y"]
 
     # Add root column
     if with_root:
@@ -121,22 +139,6 @@ def preprocess_dataframe_from0_to_1(dataframe, with_root=True, with_midhip=False
     centered_data.loc[no_face_mask, face_columns] = np.tile(
         centered_data.loc[no_face_mask, nose_columns], int(len(face_columns) / 2))
 
-    # Move in the x-axis
-    x_coordinate_smaller_than_0_mask = np.any(
-        centered_data[x_columns] < 0, axis=1)
-    x_offset = centered_data[x_coordinate_smaller_than_0_mask][x_columns].min(
-        axis=1).abs().values[:, np.newaxis]
-    centered_data.loc[x_coordinate_smaller_than_0_mask,
-                      x_columns] = centered_data.loc[x_coordinate_smaller_than_0_mask, x_columns] + x_offset
-
-    # Move in the y-axis
-    y_coordinate_smaller_than_0_mask = np.any(
-        centered_data[y_columns] < 0, axis=1)
-    y_offset = centered_data[y_coordinate_smaller_than_0_mask][y_columns].min(
-        axis=1).abs().values[:, np.newaxis]
-    centered_data.loc[y_coordinate_smaller_than_0_mask,
-                      y_columns] = centered_data.loc[y_coordinate_smaller_than_0_mask, y_columns] + y_offset
-
     # Normalize data
     repetitions = centered_data.groupby("video").size()
     max_per_video = centered_data.abs().groupby(
@@ -144,8 +146,8 @@ def preprocess_dataframe_from0_to_1(dataframe, with_root=True, with_midhip=False
     max_per_video_repeated = max_per_video.repeat(
         repetitions).to_numpy()[:, np.newaxis]
     normalized_data = centered_data.copy()
-    normalized_data[xy_columns] = normalized_data[xy_columns] / \
-        max_per_video_repeated
+    normalized_data[xy_columns] = (normalized_data[xy_columns] /
+                                   max_per_video_repeated / 2) + 0.5
 
     return normalized_data
 
@@ -158,10 +160,16 @@ def preprocess_dataframe_legacy(dataframe, with_root=True, with_midhip=True):
         column for column in dataframe.columns if "leftHand" in column]
     right_hand_columns = [
         column for column in dataframe.columns if "rightHand" in column]
-    left_wrist_columns = ["pose_15_x", "pose_15_y"]
-    right_wrist_columns = ["pose_16_x", "pose_16_y"]
+    left_wrist_columns = [
+        'leftHand_' + str(int(PoseLandmark.LEFT_WRIST)) + '_x',
+        'leftHand_' + str(int(PoseLandmark.LEFT_WRIST)) + '_y']
+    right_wrist_columns = [
+        'rightHand_' + str(int(PoseLandmark.RIGHT_WRIST)) + '_x',
+        'rightHand_' + str(int(PoseLandmark.RIGHT_WRIST)) + '_y']
     face_columns = [column for column in dataframe.columns if "face" in column]
-    nose_columns = ["pose_0_x", "pose_0_y"]
+    nose_columns = [
+        "pose_" + str(int(PoseLandmark.NOSE)) + "_x",
+        "pose_" + str(int(PoseLandmark.NOSE)) + "_y"]
 
     # Select xy columns
     selected_data = dataframe.loc[:, xy_columns]
