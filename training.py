@@ -12,7 +12,7 @@ from optimizer import build_sgd_optimizer
 # Load data
 train_dataframe = pd.read_csv("wlasl100_skeletons_train.csv", index_col=0)
 validation_dataframe = pd.read_csv("wlasl100_skeletons_val.csv", index_col=0)
-dataset = Dataset(train_dataframe, validation_dataframe, num_splits=5)
+dataset = Dataset(train_dataframe, validation_dataframe)
 del train_dataframe, validation_dataframe
 
 
