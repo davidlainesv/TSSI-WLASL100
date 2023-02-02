@@ -76,7 +76,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
     # train model
     model.fit(train_dataset,
-              epochs=config['model']['epochs'],
+              epochs=config['training']['num_epochs'],
               verbose=verbose,
               validation_data=validation_dataset,
               callbacks=callbacks)
