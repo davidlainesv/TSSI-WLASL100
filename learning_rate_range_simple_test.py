@@ -37,7 +37,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
         normalization=config['normalization'])
 
     # generate val dataset
-    validation_dataset = dataset.get_testing_set(
+    validation_dataset = dataset.get_validation_set(
         batch_size=config['batch_size'],
         normalization=config['normalization'])
 
