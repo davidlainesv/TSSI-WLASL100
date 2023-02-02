@@ -182,7 +182,7 @@ class Dataset():
 
     def get_validation_set(self,
                            batch_size=32,
-                           normalization=Normalization.neg1to1):
+                           normalization=Normalization.Neg1To1):
         # preprocess the validation dataframe
         val_dataframe = preprocess_dataframe(self.validation_dataframe,
                                              with_root=True,
