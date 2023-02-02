@@ -15,6 +15,7 @@ def preprocess_dataframe(dataframe, with_root=True, with_midhip=False, normaliza
 
 
 def preprocess_dataframe_from_neg1_to_1(dataframe, with_root=True, with_midhip=False):
+    dataframe = dataframe.copy()
     x_columns = dataframe.columns[3::2]
     y_columns = dataframe.columns[4::2]
     xy_columns = dataframe.columns[3:]
@@ -47,43 +48,47 @@ def preprocess_dataframe_from_neg1_to_1(dataframe, with_root=True, with_midhip=F
         dataframe['midhip_y'] = (dataframe['pose_' + str(int(PoseLandmark.LEFT_HIP)) + '_y'] +
                                  dataframe['pose_' + str(int(PoseLandmark.RIGHT_HIP)) + '_y']) / 2.
 
-    # Select xy columns
-    centered_data = dataframe.copy()
-    centered_data[x_columns] = centered_data[x_columns] - \
+    # Recalculate columns
+    x_columns = dataframe.columns[3::2]
+    y_columns = dataframe.columns[4::2]
+    xy_columns = dataframe.columns[3:]
+
+    # Center xy columns
+    dataframe[x_columns] = dataframe[x_columns] - \
         dataframe['root_x'].to_numpy()[:, np.newaxis]
-    centered_data[y_columns] = centered_data[y_columns] - \
+    dataframe[y_columns] = dataframe[y_columns] - \
         dataframe['root_y'].to_numpy()[:, np.newaxis]
 
     # Replace left hand columns with the left wrist coordinates
-    no_left_hand_mask = np.all(centered_data[left_hand_columns].isna(), axis=1)
-    centered_data.loc[no_left_hand_mask, left_hand_columns] = np.tile(
-        centered_data.loc[no_left_hand_mask, left_wrist_columns], int(len(left_hand_columns) / 2))
+    no_left_hand_mask = np.all(dataframe[left_hand_columns].isna(), axis=1)
+    dataframe.loc[no_left_hand_mask, left_hand_columns] = np.tile(
+        dataframe.loc[no_left_hand_mask, left_wrist_columns], int(len(left_hand_columns) / 2))
 
     # Replace right hand columns with the right wrist coordinates
     no_right_hand_mask = np.all(
-        centered_data[right_hand_columns].isna(), axis=1)
-    centered_data.loc[no_right_hand_mask, right_hand_columns] = np.tile(
-        centered_data.loc[no_right_hand_mask, right_wrist_columns], int(len(right_hand_columns) / 2))
+        dataframe[right_hand_columns].isna(), axis=1)
+    dataframe.loc[no_right_hand_mask, right_hand_columns] = np.tile(
+        dataframe.loc[no_right_hand_mask, right_wrist_columns], int(len(right_hand_columns) / 2))
 
     # Replace face columns with the nose coordinates
-    no_face_mask = np.all(centered_data[face_columns].isna(), axis=1)
-    centered_data.loc[no_face_mask, face_columns] = np.tile(
-        centered_data.loc[no_face_mask, nose_columns], int(len(face_columns) / 2))
+    no_face_mask = np.all(dataframe[face_columns].isna(), axis=1)
+    dataframe.loc[no_face_mask, face_columns] = np.tile(
+        dataframe.loc[no_face_mask, nose_columns], int(len(face_columns) / 2))
 
     # Normalize data
-    repetitions = centered_data.groupby("video").size()
-    max_per_video = centered_data.abs().groupby(
+    repetitions = dataframe.groupby("video").size()
+    max_per_video = dataframe.abs().groupby(
         "video")[xy_columns].max().max(axis=1)
     max_per_video_repeated = max_per_video.repeat(
         repetitions).to_numpy()[:, np.newaxis]
-    normalized_data = centered_data.copy()
-    normalized_data[xy_columns] = normalized_data[xy_columns] / \
+    dataframe[xy_columns] = dataframe[xy_columns] / \
         max_per_video_repeated
 
-    return normalized_data
+    return dataframe
 
 
 def preprocess_dataframe_from_0_to_1(dataframe, with_root=True, with_midhip=False):
+    dataframe = dataframe.copy()
     x_columns = dataframe.columns[3::2]
     y_columns = dataframe.columns[4::2]
     xy_columns = dataframe.columns[3:]
@@ -116,43 +121,47 @@ def preprocess_dataframe_from_0_to_1(dataframe, with_root=True, with_midhip=Fals
         dataframe['midhip_y'] = (dataframe['pose_' + str(int(PoseLandmark.LEFT_HIP)) + '_y'] +
                                  dataframe['pose_' + str(int(PoseLandmark.RIGHT_HIP)) + '_y']) / 2.
 
-    # Select xy columns
-    centered_data = dataframe.copy()
-    centered_data[x_columns] = centered_data[x_columns] - \
+    # Recalculate columns
+    x_columns = dataframe.columns[3::2]
+    y_columns = dataframe.columns[4::2]
+    xy_columns = dataframe.columns[3:]
+
+    # Center xy columns
+    dataframe[x_columns] = dataframe[x_columns] - \
         dataframe['root_x'].to_numpy()[:, np.newaxis]
-    centered_data[y_columns] = centered_data[y_columns] - \
+    dataframe[y_columns] = dataframe[y_columns] - \
         dataframe['root_y'].to_numpy()[:, np.newaxis]
 
     # Replace left hand columns with the left wrist coordinates
-    no_left_hand_mask = np.all(centered_data[left_hand_columns].isna(), axis=1)
-    centered_data.loc[no_left_hand_mask, left_hand_columns] = np.tile(
-        centered_data.loc[no_left_hand_mask, left_wrist_columns], int(len(left_hand_columns) / 2))
+    no_left_hand_mask = np.all(dataframe[left_hand_columns].isna(), axis=1)
+    dataframe.loc[no_left_hand_mask, left_hand_columns] = np.tile(
+        dataframe.loc[no_left_hand_mask, left_wrist_columns], int(len(left_hand_columns) / 2))
 
     # Replace right hand columns with the right wrist coordinates
     no_right_hand_mask = np.all(
-        centered_data[right_hand_columns].isna(), axis=1)
-    centered_data.loc[no_right_hand_mask, right_hand_columns] = np.tile(
-        centered_data.loc[no_right_hand_mask, right_wrist_columns], int(len(right_hand_columns) / 2))
+        dataframe[right_hand_columns].isna(), axis=1)
+    dataframe.loc[no_right_hand_mask, right_hand_columns] = np.tile(
+        dataframe.loc[no_right_hand_mask, right_wrist_columns], int(len(right_hand_columns) / 2))
 
     # Replace face columns with the nose coordinates
-    no_face_mask = np.all(centered_data[face_columns].isna(), axis=1)
-    centered_data.loc[no_face_mask, face_columns] = np.tile(
-        centered_data.loc[no_face_mask, nose_columns], int(len(face_columns) / 2))
+    no_face_mask = np.all(dataframe[face_columns].isna(), axis=1)
+    dataframe.loc[no_face_mask, face_columns] = np.tile(
+        dataframe.loc[no_face_mask, nose_columns], int(len(face_columns) / 2))
 
     # Normalize data
-    repetitions = centered_data.groupby("video").size()
-    max_per_video = centered_data.abs().groupby(
+    repetitions = dataframe.groupby("video").size()
+    max_per_video = dataframe.abs().groupby(
         "video")[xy_columns].max().max(axis=1)
     max_per_video_repeated = max_per_video.repeat(
         repetitions).to_numpy()[:, np.newaxis]
-    normalized_data = centered_data.copy()
-    normalized_data[xy_columns] = (normalized_data[xy_columns] /
-                                   max_per_video_repeated / 2) + 0.5
+    dataframe[xy_columns] = (dataframe[xy_columns] /
+                             max_per_video_repeated / 2) + 0.5
 
-    return normalized_data
+    return dataframe
 
 
 def preprocess_dataframe_legacy(dataframe, with_root=True, with_midhip=True):
+    dataframe = dataframe.copy()
     x_columns = dataframe.columns[3::2]
     y_columns = dataframe.columns[4::2]
     xy_columns = dataframe.columns[3:]

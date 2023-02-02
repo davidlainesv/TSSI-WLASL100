@@ -1,5 +1,5 @@
 import argparse
-from config import INPUT_SHAPE, LRRT_STOP_FACTOR, LRRT_STOP_PATIENCE, RANDOM_SEED
+from config import INPUT_SHAPE, LRRT_LOSS_MIN_DELTA, LRRT_STOP_FACTOR, LRRT_STOP_PATIENCE, RANDOM_SEED
 from callbacks import LearningRateVsLossCallback
 from dataset import Dataset
 import numpy as np
@@ -73,7 +73,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
         eval_each_steps=config['eval_each_steps'],
         stop_factor=LRRT_STOP_FACTOR,
         stop_patience=LRRT_STOP_PATIENCE,
-        loss_min_delta=config['learning_rate_delta'],
+        loss_min_delta=LRRT_LOSS_MIN_DELTA,
         log_to_wandb=log_to_wandb)
 
     # train model
