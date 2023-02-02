@@ -185,8 +185,8 @@ if __name__ == "__main__":
             raise Exception("Please provide lr_delta")
         if args.repetitions is None:
             raise Exception("Please provide repetitions")
-        if args.preprocessing is None:
-            raise Exception("Please provide preprocessing")
+        if args.normalization is None:
+            raise Exception("Please provide normalization")
 
         print(args.entity, args.project, args.backbone,
               args.augmentation, args.lr_min, args.lr_max,
