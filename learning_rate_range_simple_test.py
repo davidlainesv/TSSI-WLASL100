@@ -33,11 +33,13 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
         repeat=True,
         buffer_size=5000,
         deterministic=True,
-        augmentations=augmentations)
+        augmentations=augmentations,
+        normalization=config['normalization'])
 
     # generate val dataset
     validation_dataset = dataset.get_testing_set(
-        batch_size=config['batch_size'])
+        batch_size=config['batch_size'],
+        normalization=config['normalization'])
 
     print("[INFO] Dataset Total examples:", dataset.num_total_examples)
     print("[INFO] Dataset Training examples:", dataset.num_train_examples)
@@ -118,6 +120,7 @@ def main(args):
     lr_max = args.lr_max
     lr_delta = args.lr_delta
     repetitions = args.repetitions
+    normalization = args.normalization
 
     if sweep_id is None:
         sweep_configuration = {
@@ -129,13 +132,14 @@ def main(args):
                 'backbone': {'value': backbone},
                 'augmentation': {'value': augmentation},
                 'pretraining': {'value': pretraining},
-                'repetitions': {'values': list(range(1, repetitions + 1))},
                 'initial_learning_rate': {'value': lr_min},
                 'maximal_learning_rate': {'value': lr_max},
                 'learning_rate_delta': {'value': lr_delta},
-                'batch_size': {'values': [32, 64, 128]},
-                'weight_decay': {'values': [1e-4, 1e-5, 1e-6, 1e-7]},
                 'dropout': {'values': [0.1, 0.3, 0.5]},
+                'weight_decay': {'values': [1e-4, 1e-5, 1e-6, 1e-7]},
+                'batch_size': {'values': [32, 64, 128]},
+                'repetitions': {'values': list(range(1, repetitions + 1))},
+                'normalization': {'value': normalization},
                 'momentum': {'value': 0.9},
                 'nesterov': {'value': True}
             }
@@ -162,8 +166,8 @@ if __name__ == "__main__":
     parser.add_argument('--lr_delta', type=float,
                         help='Learning rate increment at every step')
     parser.add_argument('--repetitions', type=int, help='Repetitions')
-    parser.add_argument('--preprocessing', type=str,
-                        help='Preprocessing method (\'neg1to1\', \'0to1\'')
+    parser.add_argument('--normalization', type=str,
+                        help='Normalization method (\'neg1_to_1\', \'zero_to_1\'')
     args = parser.parse_args()
 
     if args.sweep_id is None:

@@ -46,7 +46,7 @@ parameters:
       - 1e-05
       - 1e-06
       - 1e-07
-  preprocessing:
+  normalization:
     values:
       - neg1_to_1
-      - 0_to_1
+      - zero_to_1
