@@ -13,7 +13,7 @@ from optimizer import build_sgd_optimizer
 train_dataframe = pd.read_csv("wlasl100_skeletons_train.csv", index_col=0)
 validation_dataframe = pd.read_csv("wlasl100_skeletons_val.csv", index_col=0)
 dataset = Dataset(train_dataframe, validation_dataframe)
-del train_dataframe, validation_dataframe
+# del train_dataframe, validation_dataframe
 
 
 def run_experiment(config=None, log_to_wandb=True, verbose=0):
