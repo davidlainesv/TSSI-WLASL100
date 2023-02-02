@@ -67,6 +67,8 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     else:
         return []
 
+    print("PASOOOOOOOOOO")
+
     # setup callback
     lrc = LearningRateVsLossCallback(
         validation_data=validation_dataset,
