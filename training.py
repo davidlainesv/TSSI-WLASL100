@@ -141,8 +141,7 @@ def main(args):
 
         'num_epochs': num_epochs,
         'augmentation': augmentation,
-        'train_batch_size': batch_size,
-        'test_batch_size': batch_size
+        'batch_size': batch_size
     }
 
     agent_fn(config=config, project=project, entity=entity, verbose=2)
