@@ -30,7 +30,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     augmentations = "all" if config['training']['augmentation'] else None
     train_dataset = dataset.get_training_set(
         batch_size=config['training']['train_batch_size'],
-        repeat=True,
+        repeat=False,
         buffer_size=5000,
         deterministic=True,
         augmentations=augmentations)
