@@ -155,7 +155,7 @@ if __name__ == "__main__":
                         help='Project name', default='testing')
     parser.add_argument('--backbone', type=str,
                         help='Backbone method: \'densenet\', \'mobilenet\'',
-                        default='densent')
+                        default='densenet')
     parser.add_argument('--pretraining', type=bool,
                         help='Add pretraining', default=True)
     parser.add_argument('--augmentation', type=bool,
