@@ -1,5 +1,5 @@
 import argparse
-from config import INPUT_SHAPE, LRRT_LOSS_MIN_DELTA, LRRT_STOP_FACTOR, LRRT_STOP_PATIENCE, RANDOM_SEED
+from config import INPUT_SHAPE, LRRT_LOSS_MIN_DELTA, LRRT_STOP_FACTOR, RANDOM_SEED
 from callbacks import LearningRateVsLossCallback
 from dataset import Dataset
 import numpy as np
@@ -72,7 +72,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
         validation_data=validation_dataset,
         eval_each_steps=config['eval_each_steps'],
         stop_factor=LRRT_STOP_FACTOR,
-        stop_patience=LRRT_STOP_PATIENCE,
+        stop_patience=config['stop_patience'],
         loss_min_delta=LRRT_LOSS_MIN_DELTA,
         log_to_wandb=log_to_wandb)
 
@@ -121,6 +121,7 @@ def main(args):
     lr_delta = args.lr_delta
     repetitions = args.repetitions
     normalization = args.normalization
+    stop_patience = args.stop_patience
 
     if sweep_id is None:
         sweep_configuration = {
@@ -141,7 +142,8 @@ def main(args):
                 'repetitions': {'values': list(range(1, repetitions + 1))},
                 'normalization': {'value': normalization},
                 'momentum': {'value': 0.9},
-                'nesterov': {'value': True}
+                'nesterov': {'value': True},
+                'stop_patience': {'value': stop_patience}
             }
         }
         sweep_id = wandb.sweep(sweep=sweep_configuration,
@@ -168,6 +170,8 @@ if __name__ == "__main__":
     parser.add_argument('--repetitions', type=int, help='Repetitions')
     parser.add_argument('--normalization', type=str,
                         help='Normalization method (\'neg1_to_1\', \'zero_to_1\'')
+    parser.add_argument('--stop_patience', type=int,
+                        help='Stop patience', default=10)
     args = parser.parse_args()
 
     if args.sweep_id is None:
@@ -187,10 +191,6 @@ if __name__ == "__main__":
             raise Exception("Please provide repetitions")
         if args.normalization is None:
             raise Exception("Please provide normalization")
-
-        print(args.entity, args.project, args.backbone,
-              args.augmentation, args.lr_min, args.lr_max,
-              args.lr_delta)
 
     print(args)
 
