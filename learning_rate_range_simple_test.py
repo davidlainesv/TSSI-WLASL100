@@ -1,5 +1,5 @@
 import argparse
-from config import INPUT_SHAPE, LRRT_LOSS_MIN_DELTA, LRRT_STOP_FACTOR, RANDOM_SEED
+from config import DENSENET_INPUT_SHAPE, LRRT_LOSS_MIN_DELTA, LRRT_STOP_FACTOR, MAX_INPUT_HEIGHT, MIN_INPUT_HEIGHT, MOBILENET_INPUT_SHAPE, RANDOM_SEED
 from callbacks import LearningRateVsLossCallback
 from dataset import Dataset
 import numpy as np
@@ -33,12 +33,15 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
         repeat=True,
         buffer_size=5000,
         deterministic=True,
+        input_height=MIN_INPUT_HEIGHT,
         augmentations=augmentations,
         normalization=config['normalization'])
 
     # generate val dataset
     validation_dataset = dataset.get_validation_set(
         batch_size=config['batch_size'],
+        min_height=MIN_INPUT_HEIGHT,
+        max_height=MIN_INPUT_HEIGHT if config['backbone'] == 'mobilenet' else MAX_INPUT_HEIGHT,
         normalization=config['normalization'])
 
     print("[INFO] Dataset Total examples:", dataset.num_total_examples)
@@ -55,12 +58,12 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
     # setup model
     if config['backbone'] == "densenet":
-        model = build_densenet121_model(input_shape=INPUT_SHAPE,
+        model = build_densenet121_model(input_shape=DENSENET_INPUT_SHAPE,
                                         dropout=config['dropout'],
                                         optimizer=optimizer,
                                         pretraining=config['pretraining'])
     elif config['backbone'] == "mobilenet":
-        model = build_mobilenetv2_model(input_shape=INPUT_SHAPE,
+        model = build_mobilenetv2_model(input_shape=MOBILENET_INPUT_SHAPE,
                                         dropout=config['dropout'],
                                         optimizer=optimizer,
                                         pretraining=config['pretraining'])
@@ -70,7 +73,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     # setup callback
     lrc = LearningRateVsLossCallback(
         validation_data=validation_dataset,
-        eval_each_steps=config['eval_each_steps'],
+        log_each_steps=config['log_each_steps'],
         stop_factor=LRRT_STOP_FACTOR,
         stop_patience=config['stop_patience'],
         loss_min_delta=LRRT_LOSS_MIN_DELTA,
@@ -99,9 +102,9 @@ def agent_fn(config=None):
 
     learning_rate_distance = maximal_learning_rate - initial_learning_rate
     step_size = learning_rate_distance / learning_rate_delta
-    eval_each_steps = np.ceil(dataset.num_train_examples / batch_size)
+    log_each_steps = np.ceil(dataset.num_train_examples / batch_size)
 
-    update = {"step_size": step_size, "eval_each_steps": eval_each_steps}
+    update = {"step_size": step_size, "log_each_steps": log_each_steps}
     wandb.config.update(update)
 
     _ = run_experiment(config=wandb.config, log_to_wandb=True, verbose=0)
