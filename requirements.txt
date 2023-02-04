@@ -1,6 +1,6 @@
 pandas
 scikit-learn==1.0.*
-tensorflow==2.11.*
+tensorflow==2.10.*
 tensorflow-datasets==4.8.*
 tensorflow-addons==0.19.0
 wandb
