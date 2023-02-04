@@ -153,7 +153,10 @@ class Dataset():
         # define the list of augmentations
         # in the default order
         if augmentations == "all":
-            augmentations = augmentations_order
+            if normalization == Normalization.Neg1To1:
+                augmentations = augmentations_order
+            else:
+                augmentations = augmentations_order_legacy
 
         # define the augmentation layers
         # based on the list of augmentations
