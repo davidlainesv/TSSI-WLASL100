@@ -1,5 +1,5 @@
 import argparse
-from config import INPUT_SHAPE, RANDOM_SEED
+from config import DENSENET_INPUT_SHAPE, MAX_INPUT_HEIGHT, MIN_INPUT_HEIGHT, MOBILENET_INPUT_SHAPE, RANDOM_SEED
 from dataset import Dataset
 import numpy as np
 import wandb
@@ -33,11 +33,14 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
         repeat=False,
         buffer_size=5000,
         deterministic=True,
+        input_height=MIN_INPUT_HEIGHT,
         augmentations=augmentations)
 
     # generate val dataset
     validation_dataset = dataset.get_validation_set(
-        batch_size=config['training']['test_batch_size'])
+        batch_size=config['training']['test_batch_size'],
+        min_height=MIN_INPUT_HEIGHT,
+        max_height=MIN_INPUT_HEIGHT if config['model']['backbone'] == 'mobilenet' else MAX_INPUT_HEIGHT)
 
     print("[INFO] Dataset Total examples:", dataset.num_total_examples)
     print("[INFO] Dataset Training examples:", dataset.num_train_examples)
@@ -52,12 +55,12 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
     # setup model
     if config['model']['backbone'] == "densenet":
-        model = build_densenet121_model(input_shape=INPUT_SHAPE,
+        model = build_densenet121_model(input_shape=DENSENET_INPUT_SHAPE,
                                         dropout=config['model']['dropout'],
                                         optimizer=optimizer,
                                         pretraining=config['model']['pretraining'])
     elif config['model']['backbone'] == "mobilenet":
-        model = build_mobilenetv2_model(input_shape=INPUT_SHAPE,
+        model = build_mobilenetv2_model(input_shape=MOBILENET_INPUT_SHAPE,
                                         dropout=config['model']['dropout'],
                                         optimizer=optimizer,
                                         pretraining=config['model']['pretraining'])
