@@ -181,7 +181,7 @@ if __name__ == "__main__":
                         help='Batch size of training and testing', default=32)
     parser.add_argument('--num_epochs', type=int,
                         help='Number of epochs', default=100)
-    parser.add_argument('--normalization', type=int,
+    parser.add_argument('--normalization', type=str,
                         help='Normalization method', default=Normalization.Neg1To1)
     args = parser.parse_args()
 
