@@ -117,7 +117,7 @@ def normalize_dataframe_from_neg1_to_1(dataframe):
     return dataframe
 
 
-def normalize_dataframe_legacy(dataframe, with_root=True, with_midhip=True):
+def normalize_dataframe_legacy(dataframe):
     dataframe = dataframe.copy()
     x_columns = dataframe.columns[3::2]
     y_columns = dataframe.columns[4::2]
@@ -142,11 +142,16 @@ def normalize_dataframe_legacy(dataframe, with_root=True, with_midhip=True):
     selected_data.loc[y_coordinate_smaller_than_0_mask,
                       y_columns] = selected_data.loc[y_coordinate_smaller_than_0_mask, y_columns] + y_offset
 
-    # Scale data
-    out_of_scale_mask = np.any(selected_data > 1, axis=1)
-    out_of_scale_data = selected_data[out_of_scale_mask]
-    scales = out_of_scale_data.max(axis=1).to_numpy()[:, np.newaxis]
-    selected_data.loc[out_of_scale_mask, :] = out_of_scale_data / scales
+    # Scale data (0, 1)
+    # out_of_scale_mask = np.any(selected_data > 1, axis=1)
+    # out_of_scale_data = selected_data[out_of_scale_mask]
+    # scales = out_of_scale_data.max(axis=1).to_numpy()[:, np.newaxis]
+    # selected_data.loc[out_of_scale_mask, :] = out_of_scale_data / scales
+    abs_grouped = dataframe.abs().groupby("video")
+    repetitions = abs_grouped.size().to_numpy()
+    max_per_video = abs_grouped[xy_columns].max().max(axis=1).to_numpy()
+    max_per_video_repeated = max_per_video.repeat(repetitions)[:, None]
+    dataframe[xy_columns] = dataframe[xy_columns] / max_per_video_repeated
 
     # Concat info
     info = dataframe.loc[:, ["video", "frame", "label"]].reset_index(drop=True)
