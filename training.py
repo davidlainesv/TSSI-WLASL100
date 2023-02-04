@@ -35,13 +35,15 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
         buffer_size=5000,
         deterministic=True,
         input_height=MIN_INPUT_HEIGHT,
-        augmentations=augmentations)
+        augmentations=augmentations,
+        normalization=config['model']['normalization'])
 
     # generate val dataset
     validation_dataset = dataset.get_validation_set(
         batch_size=config['training']['test_batch_size'],
         min_height=MIN_INPUT_HEIGHT,
-        max_height=MAX_INPUT_HEIGHT)
+        max_height=MAX_INPUT_HEIGHT,
+        normalization=config['model']['normalization'])
 
     print("[INFO] Dataset Total examples:", dataset.num_total_examples)
     print("[INFO] Dataset Training examples:", dataset.num_train_examples)
@@ -95,7 +97,8 @@ def agent_fn(config, project, entity="cv_inside", verbose=0):
         'model': {
             'backbone': wandb.config.backbone,
             'pretraining': wandb.config.pretraining,
-            'dropout': wandb.config.dropout
+            'dropout': wandb.config.dropout,
+            'normalization': wandb.config.normalization
         },
         'optimizer': {
             'initial_learning_rate': wandb.config.initial_learning_rate,
@@ -128,6 +131,7 @@ def main(args):
     weight_decay = args.weight_decay
     batch_size = args.batch_size
     num_epochs = args.num_epochs
+    normalization = args.normalization
 
     steps_per_epoch = np.ceil(dataset.num_train_examples / batch_size)
 
@@ -135,6 +139,7 @@ def main(args):
         'backbone': backbone,
         'pretraining': pretraining,
         'dropout': dropout,
+        'normalization': normalization,
 
         'initial_learning_rate': lr_min,
         'maximal_learning_rate': lr_max,
