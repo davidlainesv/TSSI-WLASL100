@@ -8,6 +8,7 @@ import tensorflow as tf
 import pandas as pd
 from model import build_densenet121_model, build_mobilenetv2_model
 from optimizer import build_sgd_optimizer
+from preprocessing import Normalization
 
 # Load data
 train_dataframe = pd.read_csv("wlasl100_skeletons_train.csv", index_col=0)
@@ -175,6 +176,8 @@ if __name__ == "__main__":
                         help='Batch size of training and testing', default=32)
     parser.add_argument('--num_epochs', type=int,
                         help='Number of epochs', default=100)
+    parser.add_argument('--normalization', type=int,
+                        help='Normalization method', default=Normalization.Neg1To1)
     args = parser.parse_args()
 
     print(args)
