@@ -41,7 +41,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     validation_dataset = dataset.get_validation_set(
         batch_size=config['batch_size'],
         min_height=MIN_INPUT_HEIGHT,
-        max_height=MIN_INPUT_HEIGHT if config['backbone'] == 'mobilenet' else MAX_INPUT_HEIGHT,
+        max_height=MAX_INPUT_HEIGHT,
         normalization=config['normalization'])
 
     print("[INFO] Dataset Total examples:", dataset.num_total_examples)
