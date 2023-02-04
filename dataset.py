@@ -1,5 +1,5 @@
 import tensorflow as tf
-from config import INPUT_HEIGHT, INPUT_WIDTH
+from config import INPUT_WIDTH
 from data_augmentation import RandomFlip, RandomScale, RandomShift, RandomRotation, RandomSpeed
 from preprocessing import PadIfLessThan, ResizeIfMoreThan, preprocess_dataframe
 from skeleton_graph import tssi_v2
@@ -167,7 +167,7 @@ class Dataset():
             batch = tf.expand_dims(x, axis=0)
             batch = train_augmentation(batch, training=True)
             x = train_length_normalization(batch)[0]
-            x = tf.ensure_shape(x, [INPUT_HEIGHT, INPUT_WIDTH, 3])
+            x = tf.ensure_shape(x, [input_height, INPUT_WIDTH, 3])
             return x, y
 
         dataset = generate_train_dataset(train_dataframe,
