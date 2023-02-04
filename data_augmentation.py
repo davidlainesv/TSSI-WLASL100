@@ -87,8 +87,8 @@ class RandomShift(tf.keras.layers.Layer):
     def call(self, image):
         [red, green, blue] = tf.unstack(image, axis=-1)
 
-        left_offset = tf.reduce_min(red) - self.min_value
-        right_offset = self.max_value - tf.reduce_max(red)
+        left_offset = tf.abs(tf.reduce_min(red) - self.min_value)
+        right_offset = tf.abs(self.max_value - tf.reduce_max(red))
         red_shift = tf.random.uniform(shape=[],
                                       minval=tf.math.negative(left_offset),
                                       maxval=right_offset,
@@ -97,8 +97,8 @@ class RandomShift(tf.keras.layers.Layer):
         if self.debug:
             tf.print("red shift", red_shift)
 
-        bottom_offset = tf.reduce_min(green) - self.min_value
-        top_offset = self.max_value - tf.reduce_max(green)
+        bottom_offset = tf.abs(tf.reduce_min(green) - self.min_value)
+        top_offset = tf.abs(self.max_value - tf.reduce_max(green))
         green_shift = tf.random.uniform(shape=[],
                                         minval=tf.math.negative(bottom_offset),
                                         maxval=top_offset,
