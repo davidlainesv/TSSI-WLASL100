@@ -1,7 +1,7 @@
 import tensorflow as tf
 from config import INPUT_WIDTH
 from data_augmentation import RandomFlip, RandomScale, RandomShift, RandomRotation, RandomSpeed
-from preprocessing import PadIfLessThan, ResizeIfMoreThan, preprocess_dataframe
+from preprocessing import PadIfLessThan, ResizeIfMoreThan, normalize_dataframe, preprocess_dataframe
 from skeleton_graph import tssi_v2
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
@@ -123,9 +123,10 @@ class Dataset():
 
         # expose variables
         self.joints_order = joints_order
-        self.train_dataframe = train_dataframe
-        self.validation_dataframe = validation_dataframe
-        self.test_dataframe = test_dataframe
+        self.train_dataframe = preprocess_dataframe(train_dataframe)
+        self.validation_dataframe = preprocess_dataframe(validation_dataframe)
+        self.test_dataframe = preprocess_dataframe(
+            test_dataframe) if test_dataframe is not None else None
         self.num_train_examples = num_train_examples
         self.num_val_examples = num_val_examples
         self.num_test_examples = num_test_examples
@@ -140,10 +141,8 @@ class Dataset():
                          input_height=128,
                          normalization=Normalization.Neg1To1):
         # preprocess the train dataframe
-        train_dataframe = preprocess_dataframe(self.train_dataframe,
-                                               with_root=True,
-                                               with_midhip=False,
-                                               normalization=normalization)
+        train_dataframe = normalize_dataframe(self.train_dataframe,
+                                              normalization=normalization)
 
         # define the length_normalization layers
         train_length_normalization = tf.keras.Sequential([
@@ -187,10 +186,8 @@ class Dataset():
                            max_height=256,
                            normalization=Normalization.Neg1To1):
         # preprocess the validation dataframe
-        val_dataframe = preprocess_dataframe(self.validation_dataframe,
-                                             with_root=True,
-                                             with_midhip=False,
-                                             normalization=normalization)
+        val_dataframe = normalize_dataframe(self.validation_dataframe,
+                                            normalization=normalization)
 
         # define the preprocessing
         # for the test dataset
@@ -225,10 +222,8 @@ class Dataset():
             raise Exception("Test dataframe was not provided")
 
         # preprocess the test dataframe
-        test_dataframe = preprocess_dataframe(self.test_dataframe,
-                                              with_root=True,
-                                              with_midhip=False,
-                                              normalization=normalization)
+        test_dataframe = normalize_dataframe(self.test_dataframe,
+                                             normalization=normalization)
 
         # define the preprocessing
         # for the test dataset
