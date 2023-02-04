@@ -5,7 +5,7 @@ from preprocessing import PadIfLessThan, ResizeIfMoreThan, preprocess_dataframe
 from skeleton_graph import tssi_v2
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
-from core import Normalization
+from preprocessing import Normalization
 
 
 available_augmentations = {
@@ -137,6 +137,7 @@ class Dataset():
                          repeat=False,
                          deterministic=False,
                          augmentations=[],
+                         input_height=128,
                          normalization=Normalization.Neg1To1):
         # preprocess the train dataframe
         train_dataframe = preprocess_dataframe(self.train_dataframe,
@@ -146,8 +147,8 @@ class Dataset():
 
         # define the length_normalization layers
         train_length_normalization = tf.keras.Sequential([
-            PadIfLessThan(frames=INPUT_HEIGHT),
-            ResizeIfMoreThan(frames=INPUT_HEIGHT)
+            PadIfLessThan(frames=input_height),
+            ResizeIfMoreThan(frames=input_height)
         ], name="length_normalization")
 
         # define the list of augmentations
@@ -182,6 +183,8 @@ class Dataset():
 
     def get_validation_set(self,
                            batch_size=32,
+                           min_height=128,
+                           max_height=256,
                            normalization=Normalization.Neg1To1):
         # preprocess the validation dataframe
         val_dataframe = preprocess_dataframe(self.validation_dataframe,
@@ -192,7 +195,8 @@ class Dataset():
         # define the preprocessing
         # for the test dataset
         val_preprocessing = tf.keras.Sequential([
-            PadIfLessThan(frames=INPUT_HEIGHT)
+            PadIfLessThan(frames=min_height),
+            ResizeIfMoreThan(frames=max_height)
         ], name="preprocessing")
 
         # define the train map function
@@ -212,6 +216,8 @@ class Dataset():
 
     def get_testing_set(self,
                         batch_size=32,
+                        min_height=128,
+                        max_height=256,
                         normalization=Normalization.Neg1To1):
         # raise exception if test_dataframe
         # does not exist
@@ -227,7 +233,8 @@ class Dataset():
         # define the preprocessing
         # for the test dataset
         test_preprocessing = tf.keras.Sequential([
-            PadIfLessThan(frames=INPUT_HEIGHT)
+            PadIfLessThan(frames=min_height),
+            ResizeIfMoreThan(frames=max_height)
         ], name="preprocessing")
 
         # define the train map function
