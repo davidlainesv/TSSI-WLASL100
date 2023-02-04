@@ -2,14 +2,17 @@ import tensorflow as tf
 import numpy as np
 import pandas as pd
 from mediapipe.python.solutions.pose import PoseLandmark
-from core import Normalization
+from enum import Enum
+
+
+class Normalization(str, Enum):
+    Neg1To1 = 'neg1_to_1'
+    Legacy = 'legacy'
 
 
 def preprocess_dataframe(dataframe, with_root=True, with_midhip=False, normalization=Normalization.Neg1To1):
     if normalization == Normalization.Neg1To1:
         return preprocess_dataframe_from_neg1_to_1(dataframe, with_root, with_midhip)
-    elif normalization == Normalization.ZeroTo1:
-        return preprocess_dataframe_from_0_to_1(dataframe, with_root, with_midhip)
     else:
         return preprocess_dataframe_legacy(dataframe, with_root, with_midhip)
 
@@ -85,6 +88,7 @@ def preprocess_dataframe_from_neg1_to_1(dataframe, with_root=True, with_midhip=F
         max_per_video_repeated
 
     return dataframe
+
 
 def preprocess_dataframe_legacy(dataframe, with_root=True, with_midhip=True):
     dataframe = dataframe.copy()
