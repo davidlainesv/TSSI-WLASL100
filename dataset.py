@@ -129,6 +129,7 @@ class Dataset():
         else:
             num_test_examples = 0
 
+        # generate label encoder
         self.label_encoder = OneHotEncoder()
         video_labels = train_dataframe.groupby(
             "video")["label"].unique().tolist()

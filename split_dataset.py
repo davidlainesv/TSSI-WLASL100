@@ -1,15 +1,24 @@
-import pandas as pd
 import tensorflow as tf
-from sklearn.model_selection import StratifiedKFold
-from config import INPUT_HEIGHT, INPUT_WIDTH, RANDOM_SEED
+from config import INPUT_WIDTH, RANDOM_SEED
 from data_augmentation import RandomFlip, RandomScale, RandomShift, RandomRotation, RandomSpeed
-from preprocessing import PadIfLessThan, ResizeIfMoreThan, preprocess_dataframe
+from preprocessing import PadIfLessThan, ResizeIfMoreThan, normalize_dataframe, preprocess_dataframe
 from skeleton_graph import tssi_v2
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
+import pandas as pd
+from preprocessing import Normalization
+from sklearn.model_selection import StratifiedKFold
 
 
-available_augmentations = {
+available_augmentations_legacy = {
+    'scale': RandomScale(min_value=0.0, max_value=1.0, seed=1),
+    'shift': RandomShift(min_value=0.0, max_value=1.0, seed=2),
+    'flip': RandomFlip("horizontal", min_value=0.0, max_value=1.0, seed=3),
+    'rotation': RandomRotation(factor=15.0, min_value=0.0, max_value=1.0, seed=4),
+    'speed': RandomSpeed(frames=128, seed=5)
+}
+
+available_augmentations_from_neg1_to_1 = {
     'scale': RandomScale(min_value=-1.0, max_value=1.0, seed=1),
     'shift': RandomShift(min_value=-1.0, max_value=1.0, seed=2),
     'flip': RandomFlip("horizontal", min_value=-1.0, max_value=1.0, seed=3),
@@ -21,11 +30,9 @@ augmentations_order_legacy = ['scale', 'shift', 'flip', 'rotation', 'speed']
 augmentations_order = ['flip', 'rotation', 'speed']
 
 
-def dataframe_to_dataset(dataframe, columns, filter_video_ids=[]):
+def dataframe_to_dataset(dataframe, columns, encoder, filter_video_ids=[]):
     x_sorted_columns = [col + "_x" for col in columns]
     y_sorted_columns = [col + "_y" for col in columns]
-
-    enc = OneHotEncoder()
 
     if len(filter_video_ids) > 0:
         dataframe = dataframe[dataframe["video"].isin(filter_video_ids)]
@@ -40,7 +47,7 @@ def dataframe_to_dataset(dataframe, columns, filter_video_ids=[]):
 
     X = tf.RaggedTensor.from_row_lengths(
         values=stacked_images, row_lengths=video_lengths)
-    y = enc.fit_transform(video_labels).toarray()
+    y = encoder.transform(video_labels).toarray()
 
     dataset = tf.data.Dataset.from_tensor_slices((X, y))
 
@@ -49,14 +56,15 @@ def dataframe_to_dataset(dataframe, columns, filter_video_ids=[]):
 
 def generate_train_dataset(dataframe,
                            columns,
-                           video_ids,
                            train_map_fn,
+                           label_encoder,
+                           video_ids=[],
                            repeat=False,
                            batch_size=32,
                            buffer_size=5000,
                            deterministic=False):
     # convert dataframe to dataset
-    ds = dataframe_to_dataset(dataframe, columns, video_ids)
+    ds = dataframe_to_dataset(dataframe, columns, label_encoder, video_ids)
 
     # shuffle, map and batch dataset
     if deterministic:
@@ -81,11 +89,12 @@ def generate_train_dataset(dataframe,
 
 def generate_test_dataset(dataframe,
                           columns,
-                          video_ids,
                           test_map_fn,
+                          label_encoder,
+                          video_ids=[],
                           batch_size=32):
     # convert dataframe to dataset
-    ds = dataframe_to_dataset(dataframe, columns, video_ids)
+    ds = dataframe_to_dataset(dataframe, columns, label_encoder, video_ids)
 
     # batch dataset
     max_element_length = dataframe \
@@ -124,9 +133,6 @@ class SplitDataset():
                                               with_root=True,
                                               with_midhip=False)
 
-        print("[INFO] min:", main_dataframe.min().min(),
-              "max:", main_dataframe.max().max())
-
         # obtain characteristics of the dataset
         num_total_examples = len(main_dataframe["video"].unique())
         labels = main_dataframe.groupby("video")["label"].unique().tolist()
@@ -137,48 +143,55 @@ class SplitDataset():
         splits = list(
             skf.split(np.zeros(num_total_examples), labels))
         num_train_examples = len(splits[0][0])
+        num_val_examples = len(splits[0][1])
+
+        # generate label encoder
+        self.label_encoder = OneHotEncoder()
+        video_labels = main_dataframe.groupby(
+            "video")["label"].unique().tolist()
+        self.label_encoder.fit(video_labels)
 
         # expose variables
         self.joints_order = joints_order
-        self.main_dataframe = main_dataframe
-        self.num_total_examples = num_total_examples
-        self.labels = labels
-        self.splits = splits
+        self.main_dataframe = preprocess_dataframe(main_dataframe)
         self.num_train_examples = num_train_examples
+        self.num_val_examples = num_val_examples
+        self.num_total_examples = num_total_examples
 
-        # free memory
-        del train_dataframe
-        del validation_dataframe
-        del train_and_validation_dataframe
-
-    def get_training_set(self, split=1, batch_size=32,
-                         buffer_size=5000, repeat=False,
-                         deterministic=False, augmentations=None):
+    def get_training_set(self,
+                         split=1,
+                         batch_size=32,
+                         buffer_size=5000,
+                         repeat=False,
+                         deterministic=False,
+                         augmentations=[],
+                         input_height=128,
+                         normalization=Normalization.Neg1To1):
         # obtain train indices
         split_indices = self.splits[split]
         train_indices = split_indices[0]
 
-        # define preprocessing
-        # for the train dataset
-        # train_preprocessing = tf.keras.Sequential([
-        #     tf.keras.layers.Rescaling(scale=255.0, offset=0.0),
-        # ], name="preprocessing")
+        # preprocess the train dataframe
+        train_dataframe = normalize_dataframe(self.train_dataframe,
+                                              normalization=normalization)
 
-        # define length_normalization layers
-        # NOTE: if applied, random speed augmentation
-        # changes the length of the samples a priori
+        # define the length_normalization layers
         train_length_normalization = tf.keras.Sequential([
-            PadIfLessThan(frames=INPUT_HEIGHT),
-            ResizeIfMoreThan(frames=INPUT_HEIGHT)
+            PadIfLessThan(frames=input_height),
+            ResizeIfMoreThan(frames=input_height)
         ], name="length_normalization")
 
         # define the list of augmentations
         # in the default order
         if augmentations == "all":
-            augmentations = augmentations_order
-
-        if augmentations == None:
-            augmentations = []
+            if normalization == Normalization.Neg1To1:
+                augmentations = augmentations_order
+                available_augmentations = available_augmentations_from_neg1_to_1
+            elif normalization == Normalization.Legacy:
+                augmentations = augmentations_order_legacy
+                available_augmentations = available_augmentations_legacy
+            else:
+                raise Exception(f"Unknown normalization: {normalization}")
 
         # define the augmentation layers
         # based on the list of augmentations
@@ -189,16 +202,16 @@ class SplitDataset():
         @tf.function
         def train_map_fn(x, y):
             batch = tf.expand_dims(x, axis=0)
-            # batch = train_preprocessing(batch)
             batch = train_augmentation(batch, training=True)
             x = train_length_normalization(batch)[0]
-            x = tf.ensure_shape(x, [INPUT_HEIGHT, INPUT_WIDTH, 3])
+            x = tf.ensure_shape(x, [input_height, INPUT_WIDTH, 3])
             return x, y
 
-        dataset = generate_train_dataset(self.main_dataframe,
+        dataset = generate_train_dataset(train_dataframe,
                                          self.joints_order,
-                                         train_indices,
                                          train_map_fn,
+                                         self.label_encoder,
+                                         video_ids=train_indices,
                                          repeat=repeat,
                                          batch_size=batch_size,
                                          buffer_size=buffer_size,
@@ -206,29 +219,39 @@ class SplitDataset():
 
         return dataset
 
-    def get_testing_set(self, split=1, batch_size=32):
+    def get_validation_set(self,
+                           split=1,
+                           batch_size=32,
+                           min_height=128,
+                           max_height=256,
+                           normalization=Normalization.Neg1To1):
         # obtain train indices
         split_indices = self.splits[split]
         val_indices = split_indices[1]
 
+        # preprocess the validation dataframe
+        val_dataframe = normalize_dataframe(self.validation_dataframe,
+                                            normalization=normalization)
+
         # define the preprocessing
         # for the test dataset
-        test_preprocessing = tf.keras.Sequential([
-            # tf.keras.layers.Rescaling(scale=255.0, offset=0.0),
-            PadIfLessThan(frames=INPUT_HEIGHT)
+        val_preprocessing = tf.keras.Sequential([
+            PadIfLessThan(frames=min_height),
+            ResizeIfMoreThan(frames=max_height)
         ], name="preprocessing")
 
         # define the train map function
         @tf.function
-        def test_map_fn(x, y):
+        def val_map_fn(x, y):
             x = x.to_tensor()
-            x = test_preprocessing(x)
+            x = val_preprocessing(x)
             return x, y
 
-        dataset = generate_test_dataset(self.main_dataframe,
+        dataset = generate_test_dataset(val_dataframe,
                                         self.joints_order,
-                                        val_indices,
-                                        test_map_fn,
+                                        val_map_fn,
+                                        self.label_encoder,
+                                        video_ids=val_indices,
                                         batch_size=batch_size)
 
         return dataset
