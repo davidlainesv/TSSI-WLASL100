@@ -193,12 +193,11 @@ class RandomFlip(tf.keras.layers.Layer):
             rand > 0.5, tf.equal(self.mode, 'horizontal'))
         flip_vertical = tf.logical_and(
             rand > 0.5, tf.equal(self.mode, 'vertical'))
-        # add_factor = (self.min_value +
-        #               (self.max_value - self.min_value) / 2) * 2
+        zeros = tf.zeros(tf.shape(red))
         red_add_factor = tf.cond(
-            flip_horizontal, lambda: self.add_factor(red), lambda: 0)
+            flip_horizontal, lambda: self.add_factor(red), lambda: zeros)
         green_add_factor = tf.cond(
-            flip_vertical, lambda: self.add_factor(green), lambda: 0)
+            flip_vertical, lambda: self.add_factor(green), lambda: zeros)
         new_red = tf.cond(
             flip_horizontal, lambda: tf.add(-red, red_add_factor), lambda: red)
         new_green = tf.cond(
