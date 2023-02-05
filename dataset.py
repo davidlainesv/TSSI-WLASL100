@@ -8,7 +8,15 @@ import numpy as np
 from preprocessing import Normalization
 
 
-available_augmentations = {
+available_augmentations_legacy = {
+    'scale': RandomScale(min_value=0.0, max_value=1.0, seed=1),
+    'shift': RandomShift(min_value=0.0, max_value=1.0, seed=2),
+    'flip': RandomFlip("horizontal", min_value=0.0, max_value=1.0, seed=3),
+    'rotation': RandomRotation(factor=15.0, min_value=0.0, max_value=1.0, seed=4),
+    'speed': RandomSpeed(frames=128, seed=5)
+}
+
+available_augmentations_from_neg1_to_1 = {
     'scale': RandomScale(min_value=-1.0, max_value=1.0, seed=1),
     'shift': RandomShift(min_value=-1.0, max_value=1.0, seed=2),
     'flip': RandomFlip("horizontal", min_value=-1.0, max_value=1.0, seed=3),
@@ -160,8 +168,10 @@ class Dataset():
         if augmentations == "all":
             if normalization == Normalization.Neg1To1:
                 augmentations = augmentations_order
+                available_augmentations = available_augmentations_from_neg1_to_1
             else:
                 augmentations = augmentations_order_legacy
+                available_augmentations = available_augmentations_legacy
 
         # define the augmentation layers
         # based on the list of augmentations
