@@ -123,24 +123,21 @@ def normalize_dataframe_legacy(dataframe):
     y_columns = dataframe.columns[4::2]
     xy_columns = dataframe.columns[3:]
 
-    # Select xy columns
-    selected_data = dataframe.loc[:, xy_columns]
-
     # Move in the x-axis
-    x_coordinate_smaller_than_0_mask = np.any(
-        selected_data[x_columns] < 0, axis=1)
-    x_offset = selected_data[x_coordinate_smaller_than_0_mask].min(
+    x_smaller_than_0_mask = np.any(
+        dataframe[x_columns] < 0, axis=1)
+    x_offset = dataframe.loc[x_smaller_than_0_mask, x_columns].min(
         axis=1).abs().values[:, np.newaxis]
-    selected_data.loc[x_coordinate_smaller_than_0_mask,
-                      x_columns] = selected_data.loc[x_coordinate_smaller_than_0_mask, x_columns] + x_offset
+    dataframe.loc[x_smaller_than_0_mask,
+                  x_columns] = dataframe.loc[x_smaller_than_0_mask, x_columns] + x_offset
 
     # Move in the y-axis
-    y_coordinate_smaller_than_0_mask = np.any(
-        selected_data[y_columns] < 0, axis=1)
-    y_offset = selected_data[y_coordinate_smaller_than_0_mask].min(
+    y_smaller_than_0_mask = np.any(
+        dataframe[y_columns] < 0, axis=1)
+    y_offset = dataframe.loc[y_smaller_than_0_mask, y_columns].min(
         axis=1).abs().values[:, np.newaxis]
-    selected_data.loc[y_coordinate_smaller_than_0_mask,
-                      y_columns] = selected_data.loc[y_coordinate_smaller_than_0_mask, y_columns] + y_offset
+    dataframe.loc[y_smaller_than_0_mask,
+                  y_columns] = dataframe.loc[y_smaller_than_0_mask, y_columns] + y_offset
 
     # Scale data (0, 1)
     # out_of_scale_mask = np.any(selected_data > 1, axis=1)
@@ -151,13 +148,9 @@ def normalize_dataframe_legacy(dataframe):
     repetitions = abs_grouped.size().to_numpy()
     max_per_video = abs_grouped[xy_columns].max().max(axis=1).to_numpy()
     max_per_video_repeated = max_per_video.repeat(repetitions)[:, None]
-    dataframe[xy_columns] = dataframe[xy_columns] / max_per_video_repeated
+    dataframe.loc[:, xy_columns] = dataframe[xy_columns] / max_per_video_repeated
 
-    # Concat info
-    info = dataframe.loc[:, ["video", "frame", "label"]].reset_index(drop=True)
-    full_data = pd.concat([info, selected_data], axis=1)
-
-    return full_data
+    return dataframe
 
 
 class PadIfLessThan(tf.keras.layers.Layer):
