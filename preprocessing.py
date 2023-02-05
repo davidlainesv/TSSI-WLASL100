@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-import pandas as pd
 from mediapipe.python.solutions.pose import PoseLandmark
 from enum import Enum
 
@@ -148,7 +147,8 @@ def normalize_dataframe_legacy(dataframe):
     repetitions = abs_grouped.size().to_numpy()
     max_per_video = abs_grouped[xy_columns].max().max(axis=1).to_numpy()
     max_per_video_repeated = max_per_video.repeat(repetitions)[:, None]
-    dataframe.loc[:, xy_columns] = dataframe[xy_columns] / max_per_video_repeated
+    dataframe.loc[:, xy_columns] = dataframe[xy_columns] / \
+        max_per_video_repeated
 
     return dataframe
 
