@@ -28,7 +28,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     print("[INFO] Configuration:", config, "\n")
 
     # generate train dataset
-    augmentations = "all" if config['training']['augmentation'] else None
+    augmentations = "all" if config['training']['augmentation'] else []
     train_dataset = dataset.get_training_set(
         batch_size=config['training']['train_batch_size'],
         repeat=False,
@@ -152,6 +152,9 @@ def main(args):
         'augmentation': augmentation,
         'batch_size': batch_size
     }
+
+    print(augmentation)
+    return
 
     agent_fn(config=config, project=project, entity=entity, verbose=2)
 
