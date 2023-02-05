@@ -65,7 +65,7 @@ class RandomScale(tf.keras.layers.Layer):
         green_alpha = self.round_down_float_to_1_decimal(
             tf.reduce_min([green_alphas_1, green_alphas_2]))
 
-        max_alpha = tf.minimum(tf.reduce_min([red_alpha, green_alpha]), 0.5)
+        max_alpha = tf.maximum(tf.reduce_min([red_alpha, green_alpha]), 0.5)
         alpha = tf.random.uniform(
             shape=[], minval=0.5, maxval=max_alpha, seed=self.seed)
         new_red = alpha * (red - red_mids) + red_mids
