@@ -12,7 +12,7 @@ def build_densenet121_model(input_shape=[None, 181, 3], dropout=0,
     # setup model
     weights = 'imagenet' if pretraining else None
     inputs = Input(shape=input_shape)
-    inputs = tf.keras.applications.mobilenet.preprocess_input(inputs)
+    # inputs = tf.keras.applications.mobilenet.preprocess_input(inputs)
     x = DenseNet121(input_shape=input_shape, weights=weights,
                     include_top=False, pooling='avg')(inputs)
     x = Dropout(dropout)(x)
