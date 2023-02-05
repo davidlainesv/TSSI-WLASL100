@@ -176,6 +176,13 @@ class RandomFlip(tf.keras.layers.Layer):
         self.debug = debug
 
     @tf.function
+    def add_factor(self, channel):
+        channel_maxs = tf.reduce_max(channel, axis=-1, keepdims=True)
+        channel_mins = tf.reduce_min(channel, axis=-1, keepdims=True)
+        channel_mids = (channel_maxs + channel_mins) / 2
+        return channel_mids * 2
+
+    @tf.function
     def call(self, image):
         rand = tf.random.uniform(shape=[],
                                  minval=0.,
@@ -186,12 +193,16 @@ class RandomFlip(tf.keras.layers.Layer):
             rand > 0.5, tf.equal(self.mode, 'horizontal'))
         flip_vertical = tf.logical_and(
             rand > 0.5, tf.equal(self.mode, 'vertical'))
-        add_factor = (self.min_value +
-                      (self.max_value - self.min_value) / 2) * 2
+        # add_factor = (self.min_value +
+        #               (self.max_value - self.min_value) / 2) * 2
+        red_add_factor = tf.cond(
+            flip_horizontal, lambda: self.add_factor(red), lambda: 0)
+        green_add_factor = tf.cond(
+            flip_vertical, lambda: self.add_factor(green), lambda: 0)
         new_red = tf.cond(
-            flip_horizontal, lambda: tf.add(-red, add_factor), lambda: red)
+            flip_horizontal, lambda: tf.add(-red, red_add_factor), lambda: red)
         new_green = tf.cond(
-            flip_vertical, lambda: tf.add(-green, add_factor), lambda: green)
+            flip_vertical, lambda: tf.add(-green, green_add_factor), lambda: green)
 
         if self.debug:
             tf.print("flip", rand)
