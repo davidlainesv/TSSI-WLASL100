@@ -115,57 +115,6 @@ class RandomShift(tf.keras.layers.Layer):
         return tf.stack([new_red, new_green, blue], axis=-1)
 
 
-class RandomRotation(tf.keras.layers.Layer):
-    def __init__(self, factor=45.0, min_value=0.0, max_value=255.0, seed=None, debug=False, **kwargs):
-        super().__init__(**kwargs)
-        self.min_degree = tf.math.negative(factor)
-        self.max_degree = factor
-        self.min_value = min_value
-        self.max_value = max_value
-        self.seed = seed
-        self.debug = debug
-
-    @tf.function
-    def call(self, image):
-        degree = tf.random.uniform(shape=[],
-                                   minval=self.min_degree,
-                                   maxval=self.max_degree,
-                                   seed=self.seed)
-        if self.debug:
-            tf.print("degree", degree)
-
-        angle = degree * math.pi / 180.0
-
-        [red, green, blue] = tf.unstack(image, axis=-1)
-        # mid_value = self.min_value + (self.max_value - self.min_value) / 2
-        # new_red = mid_value + \
-        #     tf.math.cos(angle) * (red - mid_value) - \
-        #     tf.math.sin(angle) * (green - mid_value)
-        # new_green = mid_value + \
-        #     tf.math.sin(angle) * (red - mid_value) + \
-        #     tf.math.cos(angle) * (green - mid_value)
-        # new_red = tf.clip_by_value(new_red, self.min_value, self.max_value)
-        # new_green = tf.clip_by_value(new_green, self.min_value, self.max_value)
-
-        red_maxs = tf.reduce_max(red, axis=-1, keepdims=True)
-        red_mins = tf.reduce_min(red, axis=-1, keepdims=True)
-        red_mids = (red_maxs + red_mins) / 2
-        green_maxs = tf.reduce_max(green, axis=-1, keepdims=True)
-        green_mins = tf.reduce_min(green, axis=-1, keepdims=True)
-        green_mids = (green_maxs + green_mins) / 2
-        new_red = red_mids + \
-            tf.math.cos(angle) * (red - red_mids) - \
-            tf.math.sin(angle) * (green - green_mids)
-        new_green = green_mids + \
-            tf.math.sin(angle) * (red - red_mids) + \
-            tf.math.cos(angle) * (green - green_mids)
-
-        new_red = tf.clip_by_value(new_red, self.min_value, self.max_value)
-        new_green = tf.clip_by_value(new_green, self.min_value, self.max_value)
-
-        return tf.stack([new_red, new_green, blue], axis=-1)
-
-
 class RandomFlip(tf.keras.layers.Layer):
     def __init__(self, mode, min_value=0.0, max_value=255.0, seed=None, debug=False, **kwargs):
         super().__init__(**kwargs)
@@ -207,3 +156,51 @@ class RandomFlip(tf.keras.layers.Layer):
             tf.print("flip", rand)
 
         return tf.stack([new_red, new_green, blue], axis=-1)
+
+
+class RandomRotation(tf.keras.layers.Layer):
+    def __init__(self, factor=15.0, min_value=0.0, max_value=255.0, seed=None, debug=False, **kwargs):
+        super().__init__(**kwargs)
+        self.min_degree = tf.math.negative(factor)
+        self.max_degree = factor
+        self.min_value = min_value
+        self.max_value = max_value
+        self.seed = seed
+        self.debug = debug
+
+    @tf.function
+    def call(self, image):
+        degree = tf.random.uniform(shape=[],
+                                   minval=self.min_degree,
+                                   maxval=self.max_degree,
+                                   seed=self.seed)
+        if self.debug:
+            tf.print("degree", degree)
+
+        angle = degree * math.pi / 180.0
+
+        [red, green, blue] = tf.unstack(image, axis=-1)
+        
+        red_maxs = tf.reduce_max(red, axis=-1, keepdims=True)
+        red_mins = tf.reduce_min(red, axis=-1, keepdims=True)
+        red_mids = (red_maxs + red_mins) / 2
+        green_maxs = tf.reduce_max(green, axis=-1, keepdims=True)
+        # option #1 rotate around the (midx, midy)
+        # green_mins = tf.reduce_min(green, axis=-1, keepdims=True)
+        # green_mids = (green_maxs + green_mins) / 2
+
+        # option #2 rotate around the (midx, maxy)
+        # maxy because lower body is closer to 1 than to 0
+        green_mids = green_maxs
+        new_red = red_mids + \
+            tf.math.cos(angle) * (red - red_mids) - \
+            tf.math.sin(angle) * (green - green_mids)
+        new_green = green_mids + \
+            tf.math.sin(angle) * (red - red_mids) + \
+            tf.math.cos(angle) * (green - green_mids)
+
+        new_red = tf.clip_by_value(new_red, self.min_value, self.max_value)
+        new_green = tf.clip_by_value(new_green, self.min_value, self.max_value)
+
+        return tf.stack([new_red, new_green, blue], axis=-1)
+
