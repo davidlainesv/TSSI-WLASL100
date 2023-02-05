@@ -20,11 +20,9 @@ augmentations_order_legacy = ['scale', 'shift', 'flip', 'rotation', 'speed']
 augmentations_order = ['flip', 'rotation', 'speed']
 
 
-def dataframe_to_dataset(dataframe, columns, filter_video_ids=[]):
+def dataframe_to_dataset(dataframe, columns, encoder, filter_video_ids=[]):
     x_sorted_columns = [col + "_x" for col in columns]
     y_sorted_columns = [col + "_y" for col in columns]
-
-    enc = OneHotEncoder()
 
     if len(filter_video_ids) > 0:
         dataframe = dataframe[dataframe["video"].isin(filter_video_ids)]
@@ -39,7 +37,7 @@ def dataframe_to_dataset(dataframe, columns, filter_video_ids=[]):
 
     X = tf.RaggedTensor.from_row_lengths(
         values=stacked_images, row_lengths=video_lengths)
-    y = enc.fit_transform(video_labels).toarray()
+    y = encoder.transform(video_labels).toarray()
 
     dataset = tf.data.Dataset.from_tensor_slices((X, y))
 
@@ -48,14 +46,15 @@ def dataframe_to_dataset(dataframe, columns, filter_video_ids=[]):
 
 def generate_train_dataset(dataframe,
                            columns,
-                           video_ids,
                            train_map_fn,
+                           label_encoder,
+                           video_ids=[],
                            repeat=False,
                            batch_size=32,
                            buffer_size=5000,
                            deterministic=False):
     # convert dataframe to dataset
-    ds = dataframe_to_dataset(dataframe, columns, video_ids)
+    ds = dataframe_to_dataset(dataframe, columns, label_encoder, video_ids)
 
     # shuffle, map and batch dataset
     if deterministic:
@@ -80,11 +79,12 @@ def generate_train_dataset(dataframe,
 
 def generate_test_dataset(dataframe,
                           columns,
-                          video_ids,
                           test_map_fn,
+                          label_encoder,
+                          video_ids=[],
                           batch_size=32):
     # convert dataframe to dataset
-    ds = dataframe_to_dataset(dataframe, columns, video_ids)
+    ds = dataframe_to_dataset(dataframe, columns, label_encoder, video_ids)
 
     # batch dataset
     max_element_length = dataframe \
@@ -120,6 +120,11 @@ class Dataset():
             num_test_examples = len(test_dataframe["video"].unique())
         else:
             num_test_examples = 0
+
+        self.label_encoder = OneHotEncoder()
+        video_labels = train_dataframe.groupby(
+            "video")["label"].unique().tolist()
+        self.label_encoder.fit(video_labels)
 
         # expose variables
         self.joints_order = joints_order
@@ -174,8 +179,9 @@ class Dataset():
 
         dataset = generate_train_dataset(train_dataframe,
                                          self.joints_order,
-                                         [],
                                          train_map_fn,
+                                         self.label_encoder,
+                                         video_ids=[],
                                          repeat=repeat,
                                          batch_size=batch_size,
                                          buffer_size=buffer_size,
@@ -208,8 +214,9 @@ class Dataset():
 
         dataset = generate_test_dataset(val_dataframe,
                                         self.joints_order,
-                                        [],
                                         val_map_fn,
+                                        self.label_encoder,
+                                        video_ids=[],
                                         batch_size=batch_size)
 
         return dataset
@@ -244,8 +251,9 @@ class Dataset():
 
         dataset = generate_test_dataset(test_dataframe,
                                         self.joints_order,
-                                        [],
                                         test_map_fn,
+                                        self.label_encoder,
+                                        video_ids=[],
                                         batch_size=batch_size)
 
         return dataset
