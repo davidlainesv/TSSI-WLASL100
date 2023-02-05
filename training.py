@@ -153,14 +153,11 @@ def main(args):
         'batch_size': batch_size
     }
 
-    print(augmentation)
-    return
-
     agent_fn(config=config, project=project, entity=entity, verbose=2)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Learning rate range test.')
+    parser = argparse.ArgumentParser(description='Traning and validation.')
     parser.add_argument('--entity', type=str,
                         help='Entity', default='davidlainesv')
     parser.add_argument('--project', type=str,
