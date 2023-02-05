@@ -1,18 +1,18 @@
 import argparse
 from config import DENSENET_INPUT_SHAPE, LRRT_LOSS_MIN_DELTA, LRRT_STOP_FACTOR, MAX_INPUT_HEIGHT, MIN_INPUT_HEIGHT, MOBILENET_INPUT_SHAPE, RANDOM_SEED
 from callbacks import LearningRateVsLossCallback
-from dataset import Dataset
 import numpy as np
 import wandb
 import tensorflow as tf
 import pandas as pd
 from model import build_densenet121_model, build_mobilenetv2_model
 from optimizer import build_sgd_optimizer
+from split_dataset import SplitDataset
 
 # Load data
 train_dataframe = pd.read_csv("wlasl100_skeletons_train.csv", index_col=0)
 validation_dataframe = pd.read_csv("wlasl100_skeletons_val.csv", index_col=0)
-dataset = Dataset(train_dataframe, validation_dataframe)
+dataset = SplitDataset(train_dataframe, validation_dataframe, num_splits=5)
 del train_dataframe, validation_dataframe
 
 
