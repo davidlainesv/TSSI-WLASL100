@@ -48,18 +48,20 @@ class RandomScale(tf.keras.layers.Layer):
         red_maxs = tf.reduce_max(red, axis=-1, keepdims=True)
         red_mins = tf.reduce_min(red, axis=-1, keepdims=True)
         red_mids = (red_maxs + red_mins) / 2
-        red_alphas_1 = (self.min_value - red_mids) / (red_mins - red_mids)
-        red_alphas_2 = (self.max_value - red_mids) / (red_maxs - red_mids)
+        red_alphas_1 = tf.abs(
+            (red_mids - self.min_value) / (red_mids - red_mins))
+        red_alphas_2 = tf.abs(
+            (self.max_value - red_mids) / (red_maxs - red_mids))
         red_alpha = self.round_down_float_to_1_decimal(
             tf.reduce_min([red_alphas_1, red_alphas_2]))
 
         green_maxs = tf.reduce_max(green, axis=-1, keepdims=True)
         green_mins = tf.reduce_min(green, axis=-1, keepdims=True)
         green_mids = (green_maxs + green_mins) / 2
-        green_alphas_1 = (self.min_value - green_mids) / \
-            (green_mins - green_mids)
-        green_alphas_2 = (self.max_value - green_mids) / \
-            (green_maxs - green_mids)
+        green_alphas_1 = tf.abs(
+            (green_mids - self.min_value) / (green_mids - green_mins))
+        green_alphas_2 = tf.abs(
+            (self.max_value - green_mids) / (green_maxs - green_mids))
         green_alpha = self.round_down_float_to_1_decimal(
             tf.reduce_min([green_alphas_1, green_alphas_2]))
 
