@@ -87,8 +87,10 @@ def preprocess_dataframe(dataframe, with_root=True, with_midhip=False):
 def normalize_dataframe(dataframe, normalization=Normalization.Neg1To1):
     if normalization == Normalization.Neg1To1:
         return normalize_dataframe_from_neg1_to_1(dataframe)
-    else:
+    elif normalization == Normalization.Legacy:
         return normalize_dataframe_legacy(dataframe)
+    else:
+        raise Exception(f"Unknown normalization: {normalization}")
 
 
 def normalize_dataframe_from_neg1_to_1(dataframe):

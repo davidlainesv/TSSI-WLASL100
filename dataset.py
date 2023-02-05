@@ -169,9 +169,11 @@ class Dataset():
             if normalization == Normalization.Neg1To1:
                 augmentations = augmentations_order
                 available_augmentations = available_augmentations_from_neg1_to_1
-            else:
+            elif normalization == Normalization.Legacy:
                 augmentations = augmentations_order_legacy
                 available_augmentations = available_augmentations_legacy
+            else:
+                raise Exception(f"Unknown normalization: {normalization}")
 
         # define the augmentation layers
         # based on the list of augmentations
