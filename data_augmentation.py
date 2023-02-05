@@ -72,7 +72,7 @@ class RandomScale(tf.keras.layers.Layer):
         new_green = alpha * (green - green_mids) + green_mids
 
         if self.debug:
-            tf.print("alpha", alpha, "max_alpha", alpha)
+            tf.print("alpha", alpha, "max_alpha", max_alpha)
 
         return tf.stack([new_red, new_green, blue], axis=-1)
 
