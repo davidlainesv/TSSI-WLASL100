@@ -138,17 +138,19 @@ def normalize_dataframe_legacy(dataframe):
     dataframe.loc[y_smaller_than_0_mask,
                   y_columns] = dataframe.loc[y_smaller_than_0_mask, y_columns] + y_offset
 
-    # Scale data (0, 1)
+    # Scale videos outside (0, 1) to (0, 1)
     # out_of_scale_mask = np.any(selected_data > 1, axis=1)
     # out_of_scale_data = selected_data[out_of_scale_mask]
     # scales = out_of_scale_data.max(axis=1).to_numpy()[:, np.newaxis]
     # selected_data.loc[out_of_scale_mask, :] = out_of_scale_data / scales
-    abs_grouped = dataframe.abs().groupby("video")
+
+    out_of_scale_mask = np.any(dataframe[xy_columns] > 1, axis=1)
+    abs_grouped = dataframe.loc[out_of_scale_mask, :].abs().groupby("video")
     repetitions = abs_grouped.size().to_numpy()
     max_per_video = abs_grouped[xy_columns].max().max(axis=1).to_numpy()
     max_per_video_repeated = max_per_video.repeat(repetitions)[:, None]
-    dataframe.loc[:, xy_columns] = dataframe[xy_columns] / \
-        max_per_video_repeated
+    dataframe.loc[out_of_scale_mask, xy_columns] = \
+        dataframe.loc[out_of_scale_mask, xy_columns] / max_per_video_repeated
 
     return dataframe
 
