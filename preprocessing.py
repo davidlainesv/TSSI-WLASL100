@@ -157,6 +157,11 @@ def normalize_dataframe_legacy(dataframe):
     return dataframe
 
 
+def filter_dataframe_by_video_ids(dataframe, video_ids):
+    mask = dataframe["video"].isin(video_ids)
+    return dataframe.loc[mask, :]
+
+
 class PadIfLessThan(tf.keras.layers.Layer):
     def __init__(self, frames=128, **kwargs):
         super().__init__(**kwargs)
