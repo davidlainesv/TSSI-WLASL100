@@ -157,6 +157,7 @@ class SplitDataset():
         self.num_train_examples = num_train_examples
         self.num_val_examples = num_val_examples
         self.num_total_examples = num_total_examples
+        self.splits = splits
 
     def get_training_set(self,
                          split=1,
