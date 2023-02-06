@@ -1,7 +1,7 @@
 import tensorflow as tf
 from config import INPUT_WIDTH, RANDOM_SEED
 from data_augmentation import RandomFlip, RandomScale, RandomShift, RandomRotation, RandomSpeed
-from preprocessing import PadIfLessThan, ResizeIfMoreThan, normalize_dataframe, preprocess_dataframe
+from preprocessing import PadIfLessThan, ResizeIfMoreThan, filter_dataframe_by_video_ids, normalize_dataframe, preprocess_dataframe
 from skeleton_graph import tssi_v2
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
@@ -30,12 +30,9 @@ augmentations_order_legacy = ['scale', 'shift', 'flip', 'rotation', 'speed']
 augmentations_order = ['flip', 'rotation', 'speed']
 
 
-def dataframe_to_dataset(dataframe, columns, encoder, filter_video_ids=[]):
+def dataframe_to_dataset(dataframe, columns, encoder):
     x_sorted_columns = [col + "_x" for col in columns]
     y_sorted_columns = [col + "_y" for col in columns]
-
-    if len(filter_video_ids) > 0:
-        dataframe = dataframe[dataframe["video"].isin(filter_video_ids)]
 
     dataframe_length = dataframe.shape[0]
     num_columns = len(x_sorted_columns)
@@ -58,13 +55,12 @@ def generate_train_dataset(dataframe,
                            columns,
                            train_map_fn,
                            label_encoder,
-                           video_ids=[],
                            repeat=False,
                            batch_size=32,
                            buffer_size=5000,
                            deterministic=False):
     # convert dataframe to dataset
-    ds = dataframe_to_dataset(dataframe, columns, label_encoder, video_ids)
+    ds = dataframe_to_dataset(dataframe, columns, label_encoder)
 
     # shuffle, map and batch dataset
     if deterministic:
@@ -91,10 +87,9 @@ def generate_test_dataset(dataframe,
                           columns,
                           test_map_fn,
                           label_encoder,
-                          video_ids=[],
                           batch_size=32):
     # convert dataframe to dataset
-    ds = dataframe_to_dataset(dataframe, columns, label_encoder, video_ids)
+    ds = dataframe_to_dataset(dataframe, columns, label_encoder)
 
     # batch dataset
     max_element_length = dataframe \
@@ -172,9 +167,13 @@ class SplitDataset():
         split_indices = self.splits[split]
         train_indices = split_indices[0]
 
-        # preprocess the train dataframe
-        train_dataframe = normalize_dataframe(self.train_dataframe,
-                                              normalization=normalization)
+        # filter main dataframe using train_indices
+        train_dataframe = filter_dataframe_by_video_ids(
+            self.main_dataframe, train_indices)
+
+        # normalize the train dataframe
+        train_dataframe = normalize_dataframe(
+            train_dataframe, normalization=normalization)
 
         # define the length_normalization layers
         train_length_normalization = tf.keras.Sequential([
@@ -212,7 +211,6 @@ class SplitDataset():
                                          self.joints_order,
                                          train_map_fn,
                                          self.label_encoder,
-                                         video_ids=train_indices,
                                          repeat=repeat,
                                          batch_size=batch_size,
                                          buffer_size=buffer_size,
@@ -230,9 +228,13 @@ class SplitDataset():
         split_indices = self.splits[split]
         val_indices = split_indices[1]
 
+        # filter main dataframe using val_indices
+        val_dataframe = filter_dataframe_by_video_ids(
+            self.main_dataframe, val_indices)
+
         # preprocess the validation dataframe
-        val_dataframe = normalize_dataframe(self.validation_dataframe,
-                                            normalization=normalization)
+        val_dataframe = normalize_dataframe(
+            val_dataframe, normalization=normalization)
 
         # define the preprocessing
         # for the test dataset
@@ -252,7 +254,6 @@ class SplitDataset():
                                         self.joints_order,
                                         val_map_fn,
                                         self.label_encoder,
-                                        video_ids=val_indices,
                                         batch_size=batch_size)
 
         return dataset
