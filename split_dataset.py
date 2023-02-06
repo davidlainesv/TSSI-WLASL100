@@ -142,13 +142,11 @@ class SplitDataset():
 
         # generate label encoder
         self.label_encoder = OneHotEncoder()
-        video_labels = main_dataframe.groupby(
-            "video")["label"].unique().tolist()
-        self.label_encoder.fit(video_labels)
+        self.label_encoder.fit(labels)
 
         # expose variables
         self.joints_order = joints_order
-        self.main_dataframe = preprocess_dataframe(main_dataframe)
+        self.main_dataframe = main_dataframe
         self.num_train_examples = num_train_examples
         self.num_val_examples = num_val_examples
         self.num_total_examples = num_total_examples
@@ -164,7 +162,7 @@ class SplitDataset():
                          input_height=128,
                          normalization=Normalization.Neg1To1):
         # obtain train indices
-        split_indices = self.splits[split]
+        split_indices = self.splits[split-1]
         train_indices = split_indices[0]
 
         # filter main dataframe using train_indices
@@ -225,7 +223,7 @@ class SplitDataset():
                            max_height=256,
                            normalization=Normalization.Neg1To1):
         # obtain train indices
-        split_indices = self.splits[split]
+        split_indices = self.splits[split-1]
         val_indices = split_indices[1]
 
         # filter main dataframe using val_indices
