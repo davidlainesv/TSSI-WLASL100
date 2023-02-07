@@ -142,12 +142,12 @@ def tssi_legacy(debug=False):
     POSE_BODY_JOINTS = [
         PoseLandmark.RIGHT_SHOULDER.value,
         PoseLandmark.RIGHT_ELBOW.value,
-        PoseLandmark.RIGHT_WRIST.value,
+        # PoseLandmark.RIGHT_WRIST.value,
         PoseLandmark.RIGHT_HIP.value,
 
         PoseLandmark.LEFT_SHOULDER.value,
         PoseLandmark.LEFT_ELBOW.value,
-        PoseLandmark.LEFT_WRIST.value,
+        # PoseLandmark.LEFT_WRIST.value,
         PoseLandmark.LEFT_HIP.value
     ]
     HAND_JOINTS = [
@@ -229,13 +229,23 @@ def tssi_legacy(debug=False):
         "face_" + str(FaceLandmark.LIPS_INNER.value))
 
     # join the pose left wrist to the left wrist of the hand
-    graph.add_edge(
-        "pose_" + str(PoseLandmark.LEFT_WRIST.value),
-        "leftHand_" + str(HandLandmark.WRIST.value))
+    # graph.add_edge(
+    #     "pose_" + str(PoseLandmark.LEFT_WRIST.value),
+    #     "leftHand_" + str(HandLandmark.WRIST.value))
 
     # join the pose right wrist to the right wrist of the hand
+    # graph.add_edge(
+    #     "pose_" + str(PoseLandmark.RIGHT_WRIST.value),
+    #     "rightHand_" + str(HandLandmark.WRIST.value))
+
+    # join the pose left elbow to the left wrist of the hand
     graph.add_edge(
-        "pose_" + str(PoseLandmark.RIGHT_WRIST.value),
+        "pose_" + str(PoseLandmark.LEFT_ELBOW.value),
+        "leftHand_" + str(HandLandmark.WRIST.value))
+
+    # join the pose right elbow to the right wrist of the hand
+    graph.add_edge(
+        "pose_" + str(PoseLandmark.RIGHT_ELBOW.value),
         "rightHand_" + str(HandLandmark.WRIST.value))
 
     # join the ROOT with the nose
