@@ -83,7 +83,7 @@ def preprocess_dataframe(dataframe, select_columns=[], with_root=True, with_midh
 
     # filter columns
     if len(select_columns) > 0:
-        base_columns = dataframe.columns[:3]
+        base_columns = list(dataframe.columns[:3])
         unique_columns = list(np.unique(select_columns))
         dataframe = dataframe.loc[:, base_columns + unique_columns]
 
