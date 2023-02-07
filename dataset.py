@@ -22,8 +22,8 @@ available_augmentations_from_neg1_to_1 = {
     'flip': RandomFlip("horizontal", min_value=-1.0, max_value=1.0, around_zero=True, seed=3),
     'rotation': RandomRotation(factor=15.0, min_value=-1.0, max_value=1.0, around_zero=True, seed=4),
     'speed': RandomSpeed(frames=128, seed=5),
-    'vertical_stretch': RandomVerticalStretch(min_value=0.0, max_value=1.0, seed=10),
-    'horizontal_stretch': RandomHorizontalStretch(min_value=0.0, max_value=1.0, seed=11)
+    'vertical_stretch': RandomVerticalStretch(min_value=-1.0, max_value=1.0, seed=10),
+    'horizontal_stretch': RandomHorizontalStretch(min_value=-1.0, max_value=1.0, seed=11)
 }
 
 augmentations_order_legacy = ['scale', 'shift', 'flip', 'rotation', 'speed']
