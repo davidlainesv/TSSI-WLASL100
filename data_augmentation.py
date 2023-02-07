@@ -116,13 +116,14 @@ class RandomShift(tf.keras.layers.Layer):
 
 
 class RandomFlip(tf.keras.layers.Layer):
-    def __init__(self, mode, min_value=0.0, max_value=255.0, seed=None, debug=False, **kwargs):
+    def __init__(self, mode, min_value=0.0, max_value=255.0, around_zero=False, seed=None, debug=False, **kwargs):
         super().__init__(**kwargs)
         self.mode = mode
         self.min_value = min_value
         self.max_value = max_value
         self.seed = seed
         self.debug = debug
+        self.around_zero = tf.constant(around_zero)
 
     @tf.function
     def add_factor(self, channel):
@@ -143,10 +144,14 @@ class RandomFlip(tf.keras.layers.Layer):
         flip_vertical = tf.logical_and(
             rand > 0.5, tf.equal(self.mode, 'vertical'))
         zeros = tf.zeros(tf.shape(red))
+        flip_horizontal_around_mid = tf.logical_and(
+            flip_horizontal, tf.math.logical_not(self.around_zero))
+        flip_vertical_around_mid = tf.logical_and(
+            flip_vertical, tf.math.logical_not(self.around_zero))
         red_add_factor = tf.cond(
-            flip_horizontal, lambda: self.add_factor(red), lambda: zeros)
+            flip_horizontal_around_mid, lambda: self.add_factor(red), lambda: zeros)
         green_add_factor = tf.cond(
-            flip_vertical, lambda: self.add_factor(green), lambda: zeros)
+            flip_vertical_around_mid, lambda: self.add_factor(green), lambda: zeros)
         new_red = tf.cond(
             flip_horizontal, lambda: tf.add(-red, red_add_factor), lambda: red)
         new_green = tf.cond(
@@ -167,16 +172,16 @@ class RandomRotation(tf.keras.layers.Layer):
         self.max_value = max_value
         self.seed = seed
         self.debug = debug
-        self.around_zero = around_zero
+        self.around_zero = tf.constant(around_zero)
 
     @tf.function
-    def red_origin(red):
+    def red_origin(self, red):
         red_maxs = tf.reduce_max(red, axis=-1, keepdims=True)
         red_mins = tf.reduce_min(red, axis=-1, keepdims=True)
         return (red_maxs + red_mins) / 2
 
     @tf.function
-    def green_origin(green):
+    def green_origin(self, green):
         # option #1 middle of green
         # green_maxs = tf.reduce_max(green, axis=-1, keepdims=True)
         # green_mins = tf.reduce_min(green, axis=-1, keepdims=True)
@@ -197,7 +202,7 @@ class RandomRotation(tf.keras.layers.Layer):
 
         angle = degree * math.pi / 180.0
         [red, green, blue] = tf.unstack(image, axis=-1)
-        
+
         red_origin = tf.cond(self.around_zero,
                              lambda: tf.zeros(tf.shape(red)),
                              lambda: self.red_origin(red))
