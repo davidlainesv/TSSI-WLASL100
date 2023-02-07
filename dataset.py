@@ -120,8 +120,10 @@ def generate_test_dataset(dataframe,
 
 class Dataset():
     def __init__(self, train_dataframe, validation_dataframe, test_dataframe=None):
-        # retrieve the joints order
-        _, _, joints_order = tssi_v2()
+        # retrieve the joints and the joints order
+        _, joints, joints_order = tssi_v2()
+        columns = [joint + "_x" for joint in joints]
+        columns += [joint + "_y" for joint in joints]
 
         # obtain characteristics of the dataset
         num_train_examples = len(train_dataframe["video"].unique())
@@ -140,10 +142,12 @@ class Dataset():
 
         # expose variables
         self.joints_order = joints_order
-        self.train_dataframe = preprocess_dataframe(train_dataframe)
-        self.validation_dataframe = preprocess_dataframe(validation_dataframe)
+        self.train_dataframe = preprocess_dataframe(
+            train_dataframe, columns=columns)
+        self.validation_dataframe = preprocess_dataframe(
+            validation_dataframe, columns=columns)
         self.test_dataframe = preprocess_dataframe(
-            test_dataframe) if test_dataframe is not None else None
+            test_dataframe, columns=columns) if test_dataframe is not None else None
         self.num_train_examples = num_train_examples
         self.num_val_examples = num_val_examples
         self.num_test_examples = num_test_examples

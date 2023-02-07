@@ -26,8 +26,16 @@ def replace_nan_with_other_column(
     return arr
 
 
-def preprocess_dataframe(dataframe, with_root=True, with_midhip=False):
+def preprocess_dataframe(dataframe, columns=[], with_root=True, with_midhip=False):
     dataframe = dataframe.copy()
+
+    # base columns
+    base_columns = dataframe.columns[:3]
+
+    # filter columns
+    if len(columns) > 0:
+        unique_columns = list(np.unique(columns))
+        dataframe = dataframe.loc[:, base_columns + unique_columns]
 
     # obtain x, y columns
     x_columns = dataframe.columns[3::2]
