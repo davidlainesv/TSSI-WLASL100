@@ -159,7 +159,7 @@ class RandomFlip(tf.keras.layers.Layer):
 
 
 class RandomRotation(tf.keras.layers.Layer):
-    def __init__(self, factor=15.0, min_value=0.0, max_value=255.0, seed=None, debug=False, **kwargs):
+    def __init__(self, factor=15.0, min_value=0.0, max_value=255.0, around_zero=False, seed=None, debug=False, **kwargs):
         super().__init__(**kwargs)
         self.min_degree = tf.math.negative(factor)
         self.max_degree = factor
@@ -167,6 +167,24 @@ class RandomRotation(tf.keras.layers.Layer):
         self.max_value = max_value
         self.seed = seed
         self.debug = debug
+        self.around_zero = around_zero
+
+    @tf.function
+    def red_origin(red):
+        red_maxs = tf.reduce_max(red, axis=-1, keepdims=True)
+        red_mins = tf.reduce_min(red, axis=-1, keepdims=True)
+        return (red_maxs + red_mins) / 2
+
+    @tf.function
+    def green_origin(green):
+        # option #1 middle of green
+        # green_maxs = tf.reduce_max(green, axis=-1, keepdims=True)
+        # green_mins = tf.reduce_min(green, axis=-1, keepdims=True)
+        # return (green_maxs + green_mins) / 2
+
+        # option #2 max of green because lower body is closer to 1 than to 0
+        green_maxs = tf.reduce_max(green, axis=-1, keepdims=True)
+        return green_maxs
 
     @tf.function
     def call(self, image):
@@ -178,29 +196,23 @@ class RandomRotation(tf.keras.layers.Layer):
             tf.print("degree", degree)
 
         angle = degree * math.pi / 180.0
-
         [red, green, blue] = tf.unstack(image, axis=-1)
         
-        red_maxs = tf.reduce_max(red, axis=-1, keepdims=True)
-        red_mins = tf.reduce_min(red, axis=-1, keepdims=True)
-        red_mids = (red_maxs + red_mins) / 2
-        green_maxs = tf.reduce_max(green, axis=-1, keepdims=True)
-        # option #1 rotate around the (midx, midy)
-        # green_mins = tf.reduce_min(green, axis=-1, keepdims=True)
-        # green_mids = (green_maxs + green_mins) / 2
+        red_origin = tf.cond(self.around_zero,
+                             lambda: tf.zeros(tf.shape(red)),
+                             lambda: self.red_origin(red))
+        green_origin = tf.cond(self.around_zero,
+                               lambda: tf.zeros(tf.shape(green)),
+                               lambda: self.green_origin(green))
 
-        # option #2 rotate around the (midx, maxy)
-        # maxy because lower body is closer to 1 than to 0
-        green_mids = green_maxs
-        new_red = red_mids + \
-            tf.math.cos(angle) * (red - red_mids) - \
-            tf.math.sin(angle) * (green - green_mids)
-        new_green = green_mids + \
-            tf.math.sin(angle) * (red - red_mids) + \
-            tf.math.cos(angle) * (green - green_mids)
+        new_red = red_origin + \
+            tf.math.cos(angle) * (red - red_origin) - \
+            tf.math.sin(angle) * (green - green_origin)
+        new_green = green_origin + \
+            tf.math.sin(angle) * (red - red_origin) + \
+            tf.math.cos(angle) * (green - green_origin)
 
         new_red = tf.clip_by_value(new_red, self.min_value, self.max_value)
         new_green = tf.clip_by_value(new_green, self.min_value, self.max_value)
 
         return tf.stack([new_red, new_green, blue], axis=-1)
-
