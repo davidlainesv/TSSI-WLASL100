@@ -143,11 +143,11 @@ class Dataset():
         # expose variables
         self.joints_order = joints_order
         self.train_dataframe = preprocess_dataframe(
-            train_dataframe, columns=columns)
+            train_dataframe, select_columns=columns)
         self.validation_dataframe = preprocess_dataframe(
-            validation_dataframe, columns=columns)
+            validation_dataframe, select_columns=columns)
         self.test_dataframe = preprocess_dataframe(
-            test_dataframe, columns=columns) if test_dataframe is not None else None
+            test_dataframe, select_columns=columns) if test_dataframe is not None else None
         self.num_train_examples = num_train_examples
         self.num_val_examples = num_val_examples
         self.num_test_examples = num_test_examples
