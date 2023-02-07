@@ -115,16 +115,9 @@ def normalize_dataframe_from_neg1_to_1(dataframe):
         root_arr[:, 1][:, None]
 
     # scale to (-1, 1)
-    # out_of_scale_mask = np.any(dataframe[xy_columns] > 1, axis=1)
-    # out_of_scale_data = dataframe.loc[out_of_scale_mask, xy_columns]
-    # scales = out_of_scale_data.max(axis=1).to_numpy()[:, np.newaxis]
-    # dataframe.loc[out_of_scale_mask, xy_columns] = out_of_scale_data / scales
-
-    abs_grouped = dataframe.abs().groupby("video")
-    repetitions = abs_grouped.size().to_numpy()
-    max_per_video = abs_grouped[xy_columns].max().max(axis=1).to_numpy()
-    max_per_video_repeated = max_per_video.repeat(repetitions)[:, None]
-    dataframe[xy_columns] = dataframe[xy_columns] / max_per_video_repeated
+    xy_data = dataframe[xy_columns]
+    scales = xy_data.abs().max(axis=1).to_numpy()[:, np.newaxis]
+    dataframe.loc[:, xy_columns] = xy_data / scales
 
     return dataframe
 
