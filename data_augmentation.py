@@ -221,3 +221,77 @@ class RandomRotation(tf.keras.layers.Layer):
         new_green = tf.clip_by_value(new_green, self.min_value, self.max_value)
 
         return tf.stack([new_red, new_green, blue], axis=-1)
+
+
+class RandomVerticalStretch(tf.keras.layers.Layer):
+    def __init__(self, min_value=0.0, max_value=255.0, seed=None, debug=False, **kwargs):
+        super().__init__(**kwargs)
+        self.min_value = min_value
+        self.max_value = max_value
+        self.seed = seed
+        self.debug = debug
+
+    @tf.function
+    def round_down_float_to_1_decimal(self, num):
+        return tf.math.floor(num * 10.0) / 10.0
+
+    @tf.function
+    def call(self, image):
+        [red, green, blue] = tf.unstack(image, axis=-1)
+
+        green_maxs = tf.reduce_max(green, axis=-1, keepdims=True)
+        green_mins = tf.reduce_min(green, axis=-1, keepdims=True)
+        green_mids = (green_maxs + green_mins) / 2
+        green_alphas_1 = tf.abs(
+            (green_mids - self.min_value) / (green_mids - green_mins))
+        green_alphas_2 = tf.abs(
+            (self.max_value - green_mids) / (green_maxs - green_mids))
+        green_alpha = self.round_down_float_to_1_decimal(
+            tf.reduce_min([green_alphas_1, green_alphas_2]))
+
+        max_alpha = tf.maximum(tf.reduce_min([green_alpha]), 0.5)
+        alpha = tf.random.uniform(
+            shape=[], minval=0.5, maxval=max_alpha, seed=self.seed)
+        new_green = alpha * (green - green_mids) + green_mids
+
+        if self.debug:
+            tf.print("alpha", alpha, "max_alpha", max_alpha)
+
+        return tf.stack([red, new_green, blue], axis=-1)
+
+
+class RandomHorizontalStretch(tf.keras.layers.Layer):
+    def __init__(self, min_value=0.0, max_value=255.0, seed=None, debug=False, **kwargs):
+        super().__init__(**kwargs)
+        self.min_value = min_value
+        self.max_value = max_value
+        self.seed = seed
+        self.debug = debug
+
+    @tf.function
+    def round_down_float_to_1_decimal(self, num):
+        return tf.math.floor(num * 10.0) / 10.0
+
+    @tf.function
+    def call(self, image):
+        [red, green, blue] = tf.unstack(image, axis=-1)
+
+        red_maxs = tf.reduce_max(red, axis=-1, keepdims=True)
+        red_mins = tf.reduce_min(red, axis=-1, keepdims=True)
+        red_mids = (red_maxs + red_mins) / 2
+        red_alphas_1 = tf.abs(
+            (red_mids - self.min_value) / (red_mids - red_mins))
+        red_alphas_2 = tf.abs(
+            (self.max_value - red_mids) / (red_maxs - red_mids))
+        red_alpha = self.round_down_float_to_1_decimal(
+            tf.reduce_min([red_alphas_1, red_alphas_2]))
+
+        max_alpha = tf.maximum(tf.reduce_min([red_alpha]), 0.5)
+        alpha = tf.random.uniform(
+            shape=[], minval=0.5, maxval=max_alpha, seed=self.seed)
+        new_red = alpha * (red - red_mids) + red_mids
+
+        if self.debug:
+            tf.print("alpha", alpha, "max_alpha", max_alpha)
+
+        return tf.stack([new_red, green, blue], axis=-1)

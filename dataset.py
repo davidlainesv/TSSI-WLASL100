@@ -1,6 +1,6 @@
 import tensorflow as tf
 from config import INPUT_WIDTH
-from data_augmentation import RandomFlip, RandomScale, RandomShift, RandomRotation, RandomSpeed
+from data_augmentation import RandomFlip, RandomHorizontalStretch, RandomScale, RandomShift, RandomRotation, RandomSpeed, RandomVerticalStretch
 from preprocessing import PadIfLessThan, ResizeIfMoreThan, normalize_dataframe, preprocess_dataframe
 from skeleton_graph import tssi_v2
 from sklearn.preprocessing import OneHotEncoder
@@ -21,11 +21,14 @@ available_augmentations_from_neg1_to_1 = {
     'shift': RandomShift(min_value=-1.0, max_value=1.0, seed=2),
     'flip': RandomFlip("horizontal", min_value=-1.0, max_value=1.0, around_zero=True, seed=3),
     'rotation': RandomRotation(factor=15.0, min_value=-1.0, max_value=1.0, around_zero=True, seed=4),
-    'speed': RandomSpeed(frames=128, seed=5)
+    'speed': RandomSpeed(frames=128, seed=5),
+    'vertical_stretch': RandomVerticalStretch(min_value=0.0, max_value=1.0, seed=10),
+    'horizontal_stretch': RandomHorizontalStretch(min_value=0.0, max_value=1.0, seed=10)
 }
 
 augmentations_order_legacy = ['scale', 'shift', 'flip', 'rotation', 'speed']
-augmentations_order = ['flip', 'rotation', 'speed']
+augmentations_order = ['horizontal_stretch',
+                       'vertical_stretch', 'flip', 'rotation', 'speed']
 
 
 def dataframe_to_dataset(dataframe, columns, encoder, filter_video_ids=[]):
