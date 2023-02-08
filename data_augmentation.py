@@ -172,11 +172,11 @@ class RandomRotation(tf.keras.layers.Layer):
 
         new_red = tf.cond(
             self.clip,
-            tf.clip_by_value(new_red, self.min_value, self.max_value),
+            lambda: tf.clip_by_value(new_red, self.min_value, self.max_value),
             lambda: new_red)
         new_green = tf.cond(
             self.clip,
-            tf.clip_by_value(new_green, self.min_value, self.max_value),
+            lambda: tf.clip_by_value(new_green, self.min_value, self.max_value),
             lambda: new_green)
 
         return tf.stack([new_red, new_green, blue], axis=-1)
