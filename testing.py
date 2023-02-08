@@ -1,12 +1,12 @@
 import argparse
-from config import DENSENET_INPUT_SHAPE, MAX_INPUT_HEIGHT, MIN_INPUT_HEIGHT, MOBILENET_INPUT_SHAPE, RANDOM_SEED
+from config import DENSENET_INPUT_SHAPE, MAX_INPUT_HEIGHT, MIN_INPUT_HEIGHT, MOBILENET_INPUT_SHAPE, NASNET_INPUT_SHAPE, RANDOM_SEED
 from dataset import Dataset
 import numpy as np
 import wandb
 from wandb.keras import WandbCallback
 import tensorflow as tf
 import pandas as pd
-from model import build_densenet121_model, build_mobilenetv2_model
+from model import build_densenet121_model, build_mobilenetv2_model, build_nasnetmobile_model
 from optimizer import build_sgd_optimizer
 from preprocessing import Normalization
 
@@ -75,8 +75,13 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
                                         dropout=config['model']['dropout'],
                                         optimizer=optimizer,
                                         pretraining=config['model']['pretraining'])
+    elif config['model']['backbone'] == 'nasnet':
+        model = build_nasnetmobile_model(input_shape=NASNET_INPUT_SHAPE,
+                                        dropout=config['dropout'],
+                                        optimizer=optimizer,
+                                        pretraining=config['pretraining'])
     else:
-        return []
+        raise Exception("Unknown model name")
 
     # setup callbacks
     callbacks = []

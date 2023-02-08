@@ -1,12 +1,12 @@
 import argparse
-from config import DENSENET_INPUT_SHAPE, LRRT_LOSS_MIN_DELTA, LRRT_STOP_FACTOR, MAX_INPUT_HEIGHT, MIN_INPUT_HEIGHT, MOBILENET_INPUT_SHAPE, RANDOM_SEED
+from config import DENSENET_INPUT_SHAPE, LRRT_LOSS_MIN_DELTA, LRRT_STOP_FACTOR, MAX_INPUT_HEIGHT, MIN_INPUT_HEIGHT, MOBILENET_INPUT_SHAPE, NASNET_INPUT_SHAPE, RANDOM_SEED
 from callbacks import LearningRateVsLossCallback
 from dataset import Dataset
 import numpy as np
 import wandb
 import tensorflow as tf
 import pandas as pd
-from model import build_densenet121_model, build_mobilenetv2_model
+from model import build_densenet121_model, build_mobilenetv2_model, build_nasnetmobile_model
 from optimizer import build_sgd_optimizer
 
 # Load data
@@ -67,8 +67,13 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
                                         dropout=config['dropout'],
                                         optimizer=optimizer,
                                         pretraining=config['pretraining'])
+    elif config['backbone'] == 'nasnet':
+        model = build_nasnetmobile_model(input_shape=NASNET_INPUT_SHAPE,
+                                        dropout=config['dropout'],
+                                        optimizer=optimizer,
+                                        pretraining=config['pretraining'])
     else:
-        return []
+        raise Exception("Unknown model name")
 
     # setup callback
     lrc = LearningRateVsLossCallback(
