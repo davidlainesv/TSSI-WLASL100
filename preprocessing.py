@@ -209,7 +209,7 @@ class Center(tf.keras.layers.Layer):
         return batch - subtrahend
 
 
-class Scale(tf.keras.layers.Layer):
+class TranslationScaleInvariant(tf.keras.layers.Layer):
     def __init__(self, level='channel', **kwargs):
         super().__init__(**kwargs)
         self.level_dict = {
