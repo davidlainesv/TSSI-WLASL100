@@ -164,7 +164,7 @@ class RandomFlip(tf.keras.layers.Layer):
 
 
 class RandomRotation(tf.keras.layers.Layer):
-    def __init__(self, factor=15.0, min_value=0.0, max_value=255.0, around_zero=False, seed=None, debug=False, **kwargs):
+    def __init__(self, factor=15.0, min_value=0.0, max_value=255.0, around_zero=False, clip=True, seed=None, debug=False, **kwargs):
         super().__init__(**kwargs)
         self.min_degree = tf.math.negative(factor)
         self.max_degree = factor
@@ -173,6 +173,7 @@ class RandomRotation(tf.keras.layers.Layer):
         self.seed = seed
         self.debug = debug
         self.around_zero = tf.constant(around_zero)
+        self.clip = tf.constant(clip)
 
     @tf.function
     def red_origin(self, red):
@@ -217,8 +218,14 @@ class RandomRotation(tf.keras.layers.Layer):
             tf.math.sin(angle) * (red - red_origin) + \
             tf.math.cos(angle) * (green - green_origin)
 
-        new_red = tf.clip_by_value(new_red, self.min_value, self.max_value)
-        new_green = tf.clip_by_value(new_green, self.min_value, self.max_value)
+        new_red = tf.cond(
+            self.clip,
+            tf.clip_by_value(new_red, self.min_value, self.max_value),
+            lambda: new_red)
+        new_green = tf.cond(
+            self.clip,
+            tf.clip_by_value(new_green, self.min_value, self.max_value),
+            lambda: new_green)
 
         return tf.stack([new_red, new_green, blue], axis=-1)
 
