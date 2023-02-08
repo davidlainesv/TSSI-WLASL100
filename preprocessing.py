@@ -210,78 +210,68 @@ class Center(tf.keras.layers.Layer):
 
 
 class Scale(tf.keras.layers.Layer):
-    def __init__(self, level='frame', **kwargs):
+    def __init__(self, level='channel', **kwargs):
         super().__init__(**kwargs)
         self.level_dict = {
-            'frame': tf.constant(0),
-            'video': tf.constant(0)
+            'channel': tf.constant(0),
+            'joint': tf.constant(1)
         }
         self.level = self.level_dict[level]
 
     @tf.function
-    def frame_level_scale(batch):
-        # batch shape: (examples, frames, joints, coordinates)
-        # [red, green, blue] shape: (examples, frames, joints)
+    def channel_level_translation_scale_invariant(self, batch):
+        # batch.shape => (examples, frames, joints, coordinates)
+        # [color].shape => (examples, frames, joints)
         [red, green, blue] = tf.unstack(batch, axis=-1)
 
-        # [color]_maxs/mins/mids shape: (examples, frames, 1)
-        red_maxs = tf.reduce_max(red, axis=-1, keepdims=True)
-        red_mins = tf.reduce_min(red, axis=-1, keepdims=True)
-        red_mids = (red_maxs + red_mins) / 2
-        green_maxs = tf.reduce_max(green, axis=-1, keepdims=True)
-        green_mins = tf.reduce_min(green, axis=-1, keepdims=True)
-        green_mids = (green_maxs + green_mins) / 2
+        # [color]_min.shape => (examples, 1, 1, 1)
+        red_min = tf.reduce_min(red, axis=[-1, -2], keepdims=True)
+        green_min = tf.reduce_min(green, axis=[-1, -2], keepdims=True)
+        blue_min = tf.reduce_min(blue, axis=[-1, -2], keepdims=True)
 
-        # [color]_centereds shape: (examples, frames, joints)
-        red_centereds = red - red_mids
-        green_centereds = green - green_mids
+        # [color]_max.shape => (examples, 1, 1, 1)
+        red_max = tf.reduce_max(red, axis=[-1, -2], keepdims=True)
+        green_max = tf.reduce_max(green, axis=[-1, -2], keepdims=True)
+        blue_max = tf.reduce_max(blue, axis=[-1, -2], keepdims=True)
 
-        # [color]_scales shape: (examples, frames, 1)
-        red_scales = tf.reduce_max(
-            tf.abs(red_centereds), axis=-1, keepdims=True)
-        green_scales = tf.reduce_max(
-            tf.abs(green_centereds), axis=-1, keepdims=True)
+        # new_[color].shape => (examples, frames, joints)
+        new_red = tf.math.divide_no_nan((red - red_min), (red_max - red_min))
+        new_green = tf.math.divide_no_nan(
+            (green - green_min), (green_max - green_min))
+        new_blue = tf.math.divide_no_nan(
+            (blue - blue_min), (blue_max - blue_min))
 
-        # [color]_scaled shape: (examples, frames, joints)
-        red_scaled = (red_centereds / red_scales) + red_mids
-        green_scaled = (green_centereds / green_scales) + green_mids
-
-        return tf.stack([red_scaled, green_scaled, blue], axis=-1)
+        return tf.stack([new_red, new_green, new_blue], axis=-1)
 
     @tf.function
-    def video_level_scale(batch):
-        # batch shape: (examples, frames, joints, coordinates)
-        # [red, green, blue] shape: (examples, frames, joints)
+    def joint_level_translation_scale_invariant(self, batch):
+        # batch.shape => (examples, frames, joints, coordinates)
+        # [color].shape => (examples, frames, joints)
         [red, green, blue] = tf.unstack(batch, axis=-1)
 
-        # [color]_maxs/mins/mids shape: (examples)
-        red_max = tf.reduce_max(tf.reduce_max(red, axis=-1), axis=-1)
-        red_min = tf.reduce_min(tf.reduce_min(red, axis=-1), axis=-1)
-        red_mid = (red_max + red_min) / 2
-        green_max = tf.reduce_max(tf.reduce_max(green, axis=-1), axis=-1)
-        green_min = tf.reduce_min(tf.reduce_min(green, axis=-1), axis=-1)
-        green_mid = (green_max + green_min) / 2
+        # [color]_min.shape => (examples, 1, joints)
+        red_min = tf.reduce_min(red, axis=-2, keepdims=True)
+        green_min = tf.reduce_min(green, axis=-2, keepdims=True)
+        blue_min = tf.reduce_min(blue, axis=-2, keepdims=True)
 
-        # [color]_centereds shape: (examples, frames, joints)
-        red_centered = red - red_mid
-        green_centered = green - green_mid
+        # [color]_max.shape => (examples, 1, joints)
+        red_max = tf.reduce_max(red, axis=-2, keepdims=True)
+        green_max = tf.reduce_max(green, axis=-2, keepdims=True)
+        blue_max = tf.reduce_max(blue, axis=-2, keepdims=True)
 
-        # [color]_scales shape: (examples)
-        red_scale = tf.reduce_max(
-            tf.reduce_max(red_centered, axis=-1), axis=-1)
-        green_scale = tf.reduce_max(
-            tf.reduce_max(green_centered, axis=-1), axis=-1)
+        # new_[color].shape => (examples, frames, joints)
+        new_red = tf.math.divide_no_nan((red - red_min), (red_max - red_min))
+        new_green = tf.math.divide_no_nan(
+            (green - green_min), (green_max - green_min))
+        new_blue = tf.math.divide_no_nan(
+            (blue - blue_min), (blue_max - blue_min))
 
-        # [color]_scaled shape: (examples, frames, joints)
-        red_scaled = (red_centered / red_scale) + red_mid
-        green_scaled = (green_centered / green_scale) + green_mid
-
-        return tf.stack([red_scaled, green_scaled, blue], axis=-1)
+        return tf.stack([new_red, new_green, new_blue], axis=-1)
 
     @tf.function
     def call(self, batch):
         batch = tf.cond(
-            self.level == self.level_dict['frame'],
-            lambda: self.frame_level_scale(batch),
-            lambda: self.video_level_scale(batch))
+            self.level == self.level_dict['channel'],
+            lambda: self.channel_level_translation_scale_invariant(batch),
+            lambda: self.joint_level_translation_scale_invariant(batch))
         return batch
