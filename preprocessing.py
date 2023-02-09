@@ -204,9 +204,21 @@ class Center(tf.keras.layers.Layer):
 
     @tf.function
     def call(self, batch):
-        center = batch[:, :, self.around_index, :]
-        subtrahend = tf.expand_dims(center, axis=2)
-        return batch - subtrahend
+        # batch.shape => (examples, frames, joints, coordinates)
+        # [color].shape => (examples, frames, joints)
+        [red, green, blue] = tf.unstack(batch, axis=-1)
+
+        # [color]_around_joint.shape => (examples, frames, 1)
+        red_around_joint = tf.expand_dims(
+            red[:, :, self.around_index], axis=-1)
+        green_around_joint = tf.expand_dims(
+            green[:, :, self.around_index], axis=-1)
+
+        # new_[color].shape => (examples, frames, joints)
+        new_red = red - red_around_joint
+        new_green = green - green_around_joint
+
+        return tf.stack([new_red, new_green, blue], axis=-1)
 
 
 class TranslationScaleInvariant(tf.keras.layers.Layer):
