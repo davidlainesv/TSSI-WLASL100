@@ -331,7 +331,7 @@ def tssi_legacy(debug=False):
     if debug:
         print(info)
 
-    return graph, joints, tree_path
+    return graph, tree_path
 
 
 def tssi_v2(debug=False):
@@ -539,4 +539,4 @@ def tssi_v2(debug=False):
     if debug:
         print(info)
 
-    return graph, joints, tree_path
+    return graph, tree_path
