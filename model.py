@@ -8,7 +8,7 @@ from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2
 from tensorflow.keras.applications.nasnet import NASNetMobile
 
 
-def build_densenet121_model(input_shape=[None, 181, 3], dropout=0,
+def build_densenet121_model(input_shape=[None, 128, 3], dropout=0,
                             optimizer=None, pretraining=True):
     # setup model
     weights = 'imagenet' if pretraining else None
@@ -32,7 +32,7 @@ def build_densenet121_model(input_shape=[None, 181, 3], dropout=0,
     return model
 
 
-def build_mobilenetv2_model(input_shape=[None, 181, 3], dropout=0,
+def build_mobilenetv2_model(input_shape=[None, 128, 3], dropout=0,
                             optimizer=None, pretraining=True):
     # setup model
     weights = "imagenet" if pretraining else None
@@ -55,7 +55,7 @@ def build_mobilenetv2_model(input_shape=[None, 181, 3], dropout=0,
     return model
 
 
-def build_nasnetmobile_model(input_shape=[None, 181, 3], dropout=0,
+def build_nasnetmobile_model(input_shape=[None, 128, 3], dropout=0,
                              optimizer=None, pretraining=True):
     # setup model
     weights = "imagenet" if pretraining else None
