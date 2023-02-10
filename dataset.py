@@ -1,11 +1,10 @@
 import tensorflow as tf
 from config import INPUT_WIDTH
 from data_augmentation import RandomFlip, RandomScale, RandomShift, RandomRotation, RandomSpeed
-from preprocessing import Center, PadIfLessThan, ResizeIfMoreThan, TranslationScaleInvariant, normalize_dataframe, preprocess_dataframe
+from preprocessing import Center, PadIfLessThan, ResizeIfMoreThan, TranslationScaleInvariant, preprocess_dataframe
 from skeleton_graph import tssi_v2
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
-from preprocessing import Normalization
 
 AugmentationDict = {
     'speed': RandomSpeed(frames=128, seed=5),
