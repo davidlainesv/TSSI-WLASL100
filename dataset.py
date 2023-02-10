@@ -181,8 +181,8 @@ class Dataset():
     def __init__(self, train_dataframe, validation_dataframe, test_dataframe=None):
         # retrieve the joints and the joints order
         graph, joints_order = tssi_v2()
-        columns = [joint + "_x" for joint in graph.joints]
-        columns += [joint + "_y" for joint in graph.joints]
+        columns = [joint + "_x" for joint in graph.nodes]
+        columns += [joint + "_y" for joint in graph.nodes]
 
         # obtain characteristics of the dataset
         num_train_examples = len(train_dataframe["video"].unique())
