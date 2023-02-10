@@ -3,9 +3,10 @@ import tensorflow as tf
 
 
 class RandomSpeed(tf.keras.layers.Layer):
-    def __init__(self, frames=128, seed=None, debug=False, **kwargs):
+    def __init__(self, min_frames=96, max_frames=128, seed=None, debug=False, **kwargs):
         super().__init__(**kwargs)
-        self.frames = frames
+        self.min_frames = min_frames
+        self.max_frames = max_frames
         self.seed = seed
         self.debug = debug
 
@@ -13,19 +14,16 @@ class RandomSpeed(tf.keras.layers.Layer):
     def call(self, images):
         height = tf.shape(images)[1]
         width = tf.shape(images)[2]
-        p = tf.cast(0.75 * self.frames, tf.int32)
-        x_min = tf.cond(height < p, lambda: height, lambda: p)
-        x_max = self.frames + 1
+        x_min = tf.cond(height < self.min_frames,
+                        lambda: height, lambda: self.min_frames)
+        x_max = self.max_frames + 1
         x = tf.random.uniform(shape=[], minval=x_min, maxval=x_max,
                               dtype=tf.int32, seed=self.seed)
         resized_images = tf.image.resize(images, [x, width])
-        # paddings = [[0, 0], [0, self.frames - x], [0, 0], [0, 0]]
-        # padded_images = tf.pad(resized_images, paddings, "CONSTANT")
 
         if self.debug:
             tf.print("speed", x)
 
-        # return padded_images
         return resized_images
 
 
@@ -179,7 +177,8 @@ class RandomRotation(tf.keras.layers.Layer):
             lambda: new_red)
         new_green = tf.cond(
             self.clip,
-            lambda: tf.clip_by_value(new_green, self.min_value, self.max_value),
+            lambda: tf.clip_by_value(
+                new_green, self.min_value, self.max_value),
             lambda: new_green)
 
         return tf.stack([new_red, new_green, blue], axis=-1)
