@@ -236,12 +236,12 @@ class TranslationScaleInvariant(tf.keras.layers.Layer):
         # [color].shape => (examples, frames, joints)
         [red, green, blue] = tf.unstack(batch, axis=-1)
 
-        # [color]_min.shape => (examples, 1, 1, 1)
+        # [color]_min.shape => (examples, 1, 1)
         red_min = tf.reduce_min(red, axis=[-1, -2], keepdims=True)
         green_min = tf.reduce_min(green, axis=[-1, -2], keepdims=True)
         blue_min = tf.reduce_min(blue, axis=[-1, -2], keepdims=True)
 
-        # [color]_max.shape => (examples, 1, 1, 1)
+        # [color]_max.shape => (examples, 1, 1)
         red_max = tf.reduce_max(red, axis=[-1, -2], keepdims=True)
         green_max = tf.reduce_max(green, axis=[-1, -2], keepdims=True)
         blue_max = tf.reduce_max(blue, axis=[-1, -2], keepdims=True)
