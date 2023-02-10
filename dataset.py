@@ -60,6 +60,18 @@ PipelineDict = {
         'space_normalization': ['invariant_frame', 'center'],
         'train_normalization': ['invariant_frame', 'center', 'pad'],
         'test_normalization': ['test_resize', 'pad']
+    },
+    'center_invariant_frame': {
+        'augmentation': ['speed', 'rotation', 'flip'],
+        'space_normalization': ['center', 'invariant_frame'],
+        'train_normalization': ['center', 'invariant_frame', 'pad'],
+        'test_normalization': ['test_resize', 'pad']
+    },
+    'default_center': {
+        'augmentation': ['speed', 'rotation', 'flip', 'scale'],
+        'space_normalization': ['center'],
+        'train_normalization': ['center', 'pad'],
+        'test_normalization': ['test_resize', 'pad']
     }
 }
 
