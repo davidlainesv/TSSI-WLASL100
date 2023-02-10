@@ -168,23 +168,24 @@ def build_augmentation_pipeline(augmentation):
 
 
 def build_normalization_pipeline(space_normalization, min_height, max_height):
-    # time normalization that changes number of active frames
-    # therefore it may change min and max values in next step
-    layers = [ResizeIfMoreThan(frames=max_height)]
-
     # space normalization: None or list
     # it normalizes between 0 and 1 based on min and max values
     # it may subtract root joint
     if space_normalization == None:
-        layers = layers + []
+        layers = []
     elif type(space_normalization) is str:
-        layers = layers + [SpaceNormalizationDict[space_normalization]]
+        layers = [SpaceNormalizationDict[space_normalization]]
     if type(space_normalization) is list:
-        layers = layers + [SpaceNormalizationDict[norm]
-                           for norm in space_normalization]
+        layers = [SpaceNormalizationDict[norm]
+                  for norm in space_normalization]
     else:
         raise Exception("Normalization " +
                         str(space_normalization) + " not found")
+
+    # time normalization does not have effect
+    # when speed augmentation is in augmentations
+    # in other case, it may change min and max values
+    layers = layers + [ResizeIfMoreThan(frames=max_height)]
 
     # padding with 0's must be applied after space normalization
     # to not affect the minimum and maximum values
