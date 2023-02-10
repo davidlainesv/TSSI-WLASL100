@@ -23,7 +23,7 @@ AugmentationDict = {
 }
 
 SpaceNormalizationDict = {
-    'invariant_frame': TranslationScaleInvariant(level="channel"),
+    'invariant_frame': TranslationScaleInvariant(level="frame"),
     'invariant_joint': TranslationScaleInvariant(level="joint"),
     'center': Center(around_index=0)
 }
