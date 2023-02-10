@@ -8,7 +8,6 @@ import tensorflow as tf
 import pandas as pd
 from model import build_densenet121_model, build_mobilenetv2_model, build_nasnetmobile_model
 from optimizer import build_sgd_optimizer
-from preprocessing import Normalization
 
 # Load data
 train_dataframe = pd.read_csv("wlasl100_skeletons_train.csv", index_col=0)
@@ -68,9 +67,9 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
                                         pretraining=config['pretraining'])
     elif config['backbone'] == 'nasnet':
         model = build_nasnetmobile_model(input_shape=NASNET_INPUT_SHAPE,
-                                        dropout=config['dropout'],
-                                        optimizer=optimizer,
-                                        pretraining=config['pretraining'])
+                                         dropout=config['dropout'],
+                                         optimizer=optimizer,
+                                         pretraining=config['pretraining'])
     else:
         raise Exception("Unknown model name")
 
@@ -113,7 +112,7 @@ def main(args):
     weight_decay = args.weight_decay
     batch_size = args.batch_size
     num_epochs = args.num_epochs
-    normalization = args.normalization
+    pipeline = args.pipeline
 
     steps_per_epoch = np.ceil(dataset.num_train_examples / batch_size)
 
@@ -121,7 +120,6 @@ def main(args):
         'backbone': backbone,
         'pretraining': pretraining,
         'dropout': dropout,
-        'normalization': normalization,
 
         'initial_learning_rate': lr_min,
         'maximal_learning_rate': lr_max,
@@ -132,7 +130,8 @@ def main(args):
 
         'num_epochs': num_epochs,
         'augmentation': augmentation,
-        'batch_size': batch_size
+        'batch_size': batch_size,
+        'pipeline': pipeline
     }
 
     agent_fn(config=config, project=project, entity=entity, verbose=2)
@@ -163,8 +162,8 @@ if __name__ == "__main__":
                         help='Batch size of training and testing', default=32)
     parser.add_argument('--num_epochs', type=int,
                         help='Number of epochs', default=100)
-    parser.add_argument('--normalization', type=str,
-                        help='Normalization method', default=Normalization.Neg1To1)
+    parser.add_argument('--pipeline', type=str,
+                        help='Pipeline', default="default")
     args = parser.parse_args()
 
     print(args)
