@@ -79,10 +79,13 @@ class RandomFlip(tf.keras.layers.Layer):
 
     @tf.function
     def add_factor(self, channel):
-        channel_maxs = tf.reduce_max(channel, axis=-1, keepdims=True)
-        channel_mins = tf.reduce_min(channel, axis=-1, keepdims=True)
-        channel_mids = (channel_maxs + channel_mins) / 2
-        return channel_mids * 2
+        # channel.shape => (examples, frames, joints)
+        # channel_maxs.shape => (examples, 1, 1)
+        # channel max per example
+        channel_max = tf.reduce_max(channel, axis=[-1, -2], keepdims=True)
+        channel_min = tf.reduce_min(channel, axis=[-1, -2], keepdims=True)
+        channel_mid = (channel_max + channel_min) / 2
+        return channel_mid * 2
 
     @tf.function
     def call(self, image):
