@@ -1,5 +1,5 @@
 import tensorflow as tf
-from config import INPUT_WIDTH
+from config import INPUT_WIDTH, MAX_INPUT_HEIGHT, MIN_INPUT_HEIGHT
 from data_augmentation import RandomFlip, RandomScale, RandomShift, RandomRotation, RandomSpeed
 from preprocessing import Center, PadIfLessThan, ResizeIfMoreThan, TranslationScaleInvariant, preprocess_dataframe
 from skeleton_graph import tssi_v2
@@ -7,13 +7,13 @@ from sklearn.preprocessing import OneHotEncoder
 import numpy as np
 
 AugmentationDict = {
-    'speed': RandomSpeed(frames=128, seed=5),
+    'speed': RandomSpeed(min_frames=60, max_frames=MIN_INPUT_HEIGHT, seed=5),
     'rotation': RandomRotation(factor=15.0, min_value=0.0, max_value=1.0, seed=4),
     'flip': RandomFlip("horizontal", min_value=0.0, max_value=1.0, seed=3),
     'scale': RandomScale(min_value=0.0, max_value=1.0, seed=1),
     'shift': RandomShift(min_value=0.0, max_value=1.0, seed=2),
     'all': [
-        RandomSpeed(frames=128, seed=5),
+        RandomSpeed(min_frames=60, max_frames=MIN_INPUT_HEIGHT, seed=5),
         RandomRotation(factor=15.0, min_value=0.0, max_value=1.0, seed=4),
         RandomFlip("horizontal", min_value=0.0, max_value=1.0, seed=3),
         RandomScale(min_value=0.0, max_value=1.0, seed=1),
@@ -27,22 +27,39 @@ SpaceNormalizationDict = {
     'center': Center(around_index=0)
 }
 
+NormalizationDict = {
+    'invariant_frame': TranslationScaleInvariant(level="frame"),
+    'invariant_joint': TranslationScaleInvariant(level="joint"),
+    'center': Center(around_index=0),
+    'train_resize': ResizeIfMoreThan(frames=MIN_INPUT_HEIGHT),
+    'test_resize': ResizeIfMoreThan(frames=MAX_INPUT_HEIGHT),
+    'pad': PadIfLessThan(frames=MIN_INPUT_HEIGHT)
+}
+
 PipelineDict = {
     'default': {
         'augmentation': ['speed', 'rotation', 'flip', 'scale', 'shift'],
-        'space_normalization': []
+        'space_normalization': [],
+        'train_normalization': [],
+        'test_normalization': ['test_resize', 'pad']
     },
     'invariant_frame': {
         'augmentation': ['speed', 'rotation', 'flip'],
-        'space_normalization': ['invariant_frame']
+        'space_normalization': ['invariant_frame'],
+        'train_normalization': ['invariant_frame', 'pad'],
+        'test_normalization': ['test_resize', 'pad']
     },
     'invariant_joint': {
         'augmentation': ['speed', 'rotation', 'flip'],
-        'space_normalization': ['invariant_joint']
+        'space_normalization': ['invariant_joint'],
+        'train_normalization': ['invariant_joint', 'pad'],
+        'test_normalization': ['test_resize', 'pad']
     },
     'invariant_frame_center': {
         'augmentation': ['speed', 'rotation', 'flip'],
-        'space_normalization': ['invariant_frame', 'center']
+        'space_normalization': ['invariant_frame', 'center'],
+        'train_normalization': ['invariant_frame', 'center', 'pad'],
+        'test_normalization': ['test_resize', 'pad']
     }
 }
 
@@ -169,8 +186,9 @@ def build_normalization_pipeline(space_normalization, min_height, max_height):
         raise Exception("Normalization " +
                         str(space_normalization) + " not found")
 
-    # time normalization that pads with 0's
-    # (0's represent no movement)
+    # padding with 0's must be applied after space normalization
+    # to not affect the minimum and maximum values
+    # and represent no movement with 0's
     layers = layers + [
         PadIfLessThan(frames=min_height)
     ]
