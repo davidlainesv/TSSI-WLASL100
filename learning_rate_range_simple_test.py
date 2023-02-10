@@ -29,20 +29,19 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     # generate train dataset
     augmentations = "all" if config['augmentation'] else []
     train_dataset = dataset.get_training_set(
-        batch_size=config['batch_size'],
-        repeat=True,
-        buffer_size=5000,
-        deterministic=True,
         input_height=MIN_INPUT_HEIGHT,
-        augmentations=augmentations,
-        normalization=config['normalization'])
+        batch_size=config['batch_size'],
+        buffer_size=5000,
+        repeat=True,
+        deterministic=True,
+        pipeline=config['pipeline'])
 
     # generate val dataset
     validation_dataset = dataset.get_validation_set(
         batch_size=config['batch_size'],
         min_height=MIN_INPUT_HEIGHT,
         max_height=MAX_INPUT_HEIGHT,
-        normalization=config['normalization'])
+        pipeline=config['pipeline'])
 
     print("[INFO] Dataset Total examples:", dataset.num_total_examples)
     print("[INFO] Dataset Training examples:", dataset.num_train_examples)
@@ -69,9 +68,9 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
                                         pretraining=config['pretraining'])
     elif config['backbone'] == 'nasnet':
         model = build_nasnetmobile_model(input_shape=NASNET_INPUT_SHAPE,
-                                        dropout=config['dropout'],
-                                        optimizer=optimizer,
-                                        pretraining=config['pretraining'])
+                                         dropout=config['dropout'],
+                                         optimizer=optimizer,
+                                         pretraining=config['pretraining'])
     else:
         raise Exception("Unknown model name")
 
