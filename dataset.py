@@ -1,39 +1,60 @@
 import tensorflow as tf
 from config import INPUT_WIDTH
-from data_augmentation import RandomFlip, RandomHorizontalStretch, RandomScale, RandomShift, RandomRotation, RandomSpeed, RandomVerticalStretch
-from preprocessing import PadIfLessThan, ResizeIfMoreThan, normalize_dataframe, preprocess_dataframe
+from data_augmentation import RandomFlip, RandomScale, RandomShift, RandomRotation, RandomSpeed
+from preprocessing import Center, PadIfLessThan, ResizeIfMoreThan, TranslationScaleInvariant, normalize_dataframe, preprocess_dataframe
 from skeleton_graph import tssi_v2
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
 from preprocessing import Normalization
 
-
-available_augmentations_legacy = {
+AugmentationDict = {
+    'speed': RandomSpeed(frames=128, seed=5),
+    'rotation': RandomRotation(factor=15.0, min_value=0.0, max_value=1.0, seed=4),
+    'flip': RandomFlip("horizontal", min_value=0.0, max_value=1.0, seed=3),
     'scale': RandomScale(min_value=0.0, max_value=1.0, seed=1),
     'shift': RandomShift(min_value=0.0, max_value=1.0, seed=2),
-    'flip': RandomFlip("horizontal", min_value=0.0, max_value=1.0, seed=3),
-    'rotation': RandomRotation(factor=15.0, min_value=0.0, max_value=1.0, seed=4),
-    'speed': RandomSpeed(frames=128, seed=5)
+    'all': [
+        RandomSpeed(frames=128, seed=5),
+        RandomRotation(factor=15.0, min_value=0.0, max_value=1.0, seed=4),
+        RandomFlip("horizontal", min_value=0.0, max_value=1.0, seed=3),
+        RandomScale(min_value=0.0, max_value=1.0, seed=1),
+        RandomShift(min_value=0.0, max_value=1.0, seed=2)
+    ]
 }
 
-available_augmentations_from_neg1_to_1 = {
-    'scale': RandomScale(min_value=-1.0, max_value=1.0, seed=1),
-    'shift': RandomShift(min_value=-1.0, max_value=1.0, seed=2),
-    'flip': RandomFlip("horizontal", min_value=-1.0, max_value=1.0, around_zero=True, seed=3),
-    'rotation': RandomRotation(factor=15.0, min_value=-1.0, max_value=1.0, around_zero=True, seed=4),
-    'speed': RandomSpeed(frames=128, seed=5),
-    'vertical_stretch': RandomVerticalStretch(min_value=-1.0, max_value=1.0, seed=10),
-    'horizontal_stretch': RandomHorizontalStretch(min_value=-1.0, max_value=1.0, seed=11)
+SpaceNormalizationDict = {
+    'invariant_channel': TranslationScaleInvariant(level="channel"),
+    'invariant_joint': TranslationScaleInvariant(level="joint"),
+    'center': Center(around_index=0)
 }
 
-augmentations_order_legacy = ['scale', 'shift', 'flip', 'rotation', 'speed']
-augmentations_order = ['horizontal_stretch',
-                       'vertical_stretch', 'flip', 'rotation', 'speed']
+PipelineDict = {
+    'default': {
+        'augmentation': ['speed', 'rotation', 'flip', 'scale', 'shift'],
+        'space_normalization': []
+    },
+    'invariant_channel': {
+        'augmentation': ['speed', 'rotation', 'flip'],
+        'space_normalization': ['invariant_channel']
+    },
+    'invariant_joint': {
+        'augmentation': ['speed', 'rotation', 'flip'],
+        'space_normalization': ['invariant_joint']
+    },
+    'center_invariant_channel': {
+        'augmentation': ['speed', 'rotation', 'flip'],
+        'space_normalization': ['center', 'invariant_channel']
+    },
+    'center_invariant_joint': {
+        'augmentation': ['speed', 'rotation', 'flip'],
+        'space_normalization': ['center', 'invariant_joint']
+    }
+}
 
 
-def dataframe_to_dataset(dataframe, columns, encoder, filter_video_ids=[]):
-    x_sorted_columns = [col + "_x" for col in columns]
-    y_sorted_columns = [col + "_y" for col in columns]
+def dataframe_to_dataset(dataframe, ordered_columns, encoder, filter_video_ids=[]):
+    x_sorted_columns = [col + "_x" for col in ordered_columns]
+    y_sorted_columns = [col + "_y" for col in ordered_columns]
 
     if len(filter_video_ids) > 0:
         dataframe = dataframe[dataframe["video"].isin(filter_video_ids)]
@@ -56,7 +77,7 @@ def dataframe_to_dataset(dataframe, columns, encoder, filter_video_ids=[]):
 
 
 def generate_train_dataset(dataframe,
-                           columns,
+                           ordered_columns,
                            train_map_fn,
                            label_encoder,
                            video_ids=[],
@@ -65,7 +86,8 @@ def generate_train_dataset(dataframe,
                            buffer_size=5000,
                            deterministic=False):
     # convert dataframe to dataset
-    ds = dataframe_to_dataset(dataframe, columns, label_encoder, video_ids)
+    ds = dataframe_to_dataset(
+        dataframe, ordered_columns, label_encoder, video_ids)
 
     # shuffle, map and batch dataset
     if deterministic:
@@ -89,13 +111,14 @@ def generate_train_dataset(dataframe,
 
 
 def generate_test_dataset(dataframe,
-                          columns,
+                          ordered_columns,
                           test_map_fn,
                           label_encoder,
                           video_ids=[],
                           batch_size=32):
     # convert dataframe to dataset
-    ds = dataframe_to_dataset(dataframe, columns, label_encoder, video_ids)
+    ds = dataframe_to_dataset(
+        dataframe, ordered_columns, label_encoder, video_ids)
 
     # batch dataset
     max_element_length = dataframe \
@@ -118,12 +141,48 @@ def generate_test_dataset(dataframe,
     return dataset
 
 
+def build_augmentation_pipeline(augmentation):
+    # augmentation: 'all', None or list
+    if augmentation == None:
+        layers = []
+    elif type(augmentation) is str:
+        layers = [AugmentationDict[augmentation]]
+    elif type(augmentation) is list:
+        layers = [AugmentationDict[aug] for aug in augmentation]
+    else:
+        raise Exception("Augmentation " + str(augmentation) + " not found")
+    pipeline = tf.keras.Sequential(layers, name="augmentation")
+    return pipeline
+
+
+def build_normalization_pipeline(space_normalization, min_height, max_height):
+    # space normalization: None or list
+    if space_normalization == None:
+        layers = []
+    elif type(space_normalization) is str:
+        layers = [SpaceNormalizationDict[space_normalization]]
+    if type(space_normalization) is list:
+        layers = [SpaceNormalizationDict[norm] for norm in space_normalization]
+    else:
+        raise Exception("Normalization " +
+                        str(space_normalization) + " not found")
+
+    # time normalization same for all
+    layers = layers + [
+        PadIfLessThan(frames=min_height),
+        ResizeIfMoreThan(frames=max_height)
+    ]
+
+    pipeline = tf.keras.Sequential(layers, name="normalization")
+    return pipeline
+
+
 class Dataset():
     def __init__(self, train_dataframe, validation_dataframe, test_dataframe=None):
         # retrieve the joints and the joints order
-        _, joints, joints_order = tssi_v2()
-        columns = [joint + "_x" for joint in joints]
-        columns += [joint + "_y" for joint in joints]
+        graph, joints_order = tssi_v2()
+        columns = [joint + "_x" for joint in graph.joints]
+        columns += [joint + "_y" for joint in graph.joints]
 
         # obtain characteristics of the dataset
         num_train_examples = len(train_dataframe["video"].unique())
@@ -154,50 +213,32 @@ class Dataset():
         self.num_total_examples = num_total_examples
 
     def get_training_set(self,
+                         input_height=128,
                          batch_size=32,
                          buffer_size=5000,
                          repeat=False,
                          deterministic=False,
-                         augmentations=[],
-                         input_height=128,
-                         normalization=Normalization.Neg1To1):
-        # preprocess the train dataframe
-        train_dataframe = normalize_dataframe(self.train_dataframe,
-                                              normalization=normalization)
-
-        # define the length_normalization layers
-        train_length_normalization = tf.keras.Sequential([
-            PadIfLessThan(frames=input_height),
-            ResizeIfMoreThan(frames=input_height)
-        ], name="length_normalization")
-
-        # define the list of augmentations
-        # in the default order
-        if augmentations == "all":
-            if normalization == Normalization.Neg1To1:
-                augmentations = augmentations_order
-                available_augmentations = available_augmentations_from_neg1_to_1
-            elif normalization == Normalization.Legacy:
-                augmentations = augmentations_order_legacy
-                available_augmentations = available_augmentations_legacy
-            else:
-                raise Exception(f"Unknown normalization: {normalization}")
-
-        # define the augmentation layers
-        # based on the list of augmentations
-        layers = [available_augmentations[aug] for aug in augmentations]
-        train_augmentation = tf.keras.Sequential(layers, name="augmentation")
+                         augmentation=[],
+                         space_normalization=[],
+                         pipeline=None):
+        # define augmentation+normalization pipeline
+        if type(pipeline) is str:
+            augmentation = PipelineDict[pipeline]['augmentation']
+            space_normalization = PipelineDict[pipeline]['space_normalization']
+        augmentation_pipeline = build_augmentation_pipeline(augmentation)
+        normalization_pipeline = build_normalization_pipeline(
+            space_normalization, input_height, input_height)
 
         # define the train map function
         @tf.function
         def train_map_fn(x, y):
             batch = tf.expand_dims(x, axis=0)
-            batch = train_augmentation(batch, training=True)
-            x = train_length_normalization(batch)[0]
-            x = tf.ensure_shape(x, [input_height, INPUT_WIDTH, 3])
+            batch = augmentation_pipeline(batch, training=True)
+            batch = normalization_pipeline(batch, training=True)
+            x = tf.ensure_shape(batch[0], [input_height, INPUT_WIDTH, 3])
             return x, y
 
-        dataset = generate_train_dataset(train_dataframe,
+        dataset = generate_train_dataset(self.train_dataframe,
                                          self.joints_order,
                                          train_map_fn,
                                          self.label_encoder,
@@ -213,28 +254,24 @@ class Dataset():
                            batch_size=32,
                            min_height=128,
                            max_height=256,
-                           normalization=Normalization.Neg1To1):
-        # preprocess the validation dataframe
-        val_dataframe = normalize_dataframe(self.validation_dataframe,
-                                            normalization=normalization)
+                           space_normalization=None,
+                           pipeline=None):
+        # define normalization pipeline
+        if type(pipeline) is str:
+            space_normalization = PipelineDict[pipeline]['space_normalization']
+        normalization_pipeline = build_normalization_pipeline(
+            space_normalization, min_height, max_height)
 
-        # define the preprocessing
-        # for the test dataset
-        val_preprocessing = tf.keras.Sequential([
-            PadIfLessThan(frames=min_height),
-            ResizeIfMoreThan(frames=max_height)
-        ], name="preprocessing")
-
-        # define the train map function
+        # define the val map function
         @tf.function
-        def val_map_fn(x, y):
-            x = x.to_tensor()
-            x = val_preprocessing(x)
-            return x, y
+        def test_map_fn(batch_x, batch_y):
+            batch_x = batch_x.to_tensor()
+            batch_x = normalization_pipeline(batch_x)
+            return batch_x, batch_y
 
-        dataset = generate_test_dataset(val_dataframe,
+        dataset = generate_test_dataset(self.validation_dataframe,
                                         self.joints_order,
-                                        val_map_fn,
+                                        test_map_fn,
                                         self.label_encoder,
                                         video_ids=[],
                                         batch_size=batch_size)
@@ -245,31 +282,25 @@ class Dataset():
                         batch_size=32,
                         min_height=128,
                         max_height=256,
-                        normalization=Normalization.Neg1To1):
-        # raise exception if test_dataframe
-        # does not exist
+                        space_normalization=None,
+                        pipeline=None):
         if self.test_dataframe is None:
-            raise Exception("Test dataframe was not provided")
+            return None
 
-        # preprocess the test dataframe
-        test_dataframe = normalize_dataframe(self.test_dataframe,
-                                             normalization=normalization)
+        # define normalization pipeline
+        if type(pipeline) is str:
+            space_normalization = PipelineDict[pipeline]['space_normalization']
+        normalization_pipeline = build_normalization_pipeline(
+            space_normalization, min_height, max_height)
 
-        # define the preprocessing
-        # for the test dataset
-        test_preprocessing = tf.keras.Sequential([
-            PadIfLessThan(frames=min_height),
-            ResizeIfMoreThan(frames=max_height)
-        ], name="preprocessing")
-
-        # define the train map function
+        # define the val map function
         @tf.function
-        def test_map_fn(x, y):
-            x = x.to_tensor()
-            x = test_preprocessing(x)
-            return x, y
+        def test_map_fn(batch_x, batch_y):
+            batch_x = batch_x.to_tensor()
+            batch_x = normalization_pipeline(batch_x)
+            return batch_x, batch_y
 
-        dataset = generate_test_dataset(test_dataframe,
+        dataset = generate_test_dataset(self.test_dataframe,
                                         self.joints_order,
                                         test_map_fn,
                                         self.label_encoder,
