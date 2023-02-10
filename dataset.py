@@ -23,7 +23,7 @@ AugmentationDict = {
 }
 
 SpaceNormalizationDict = {
-    'invariant_channel': TranslationScaleInvariant(level="channel"),
+    'invariant_frame': TranslationScaleInvariant(level="channel"),
     'invariant_joint': TranslationScaleInvariant(level="joint"),
     'center': Center(around_index=0)
 }
@@ -33,21 +33,17 @@ PipelineDict = {
         'augmentation': ['speed', 'rotation', 'flip', 'scale', 'shift'],
         'space_normalization': []
     },
-    'invariant_channel': {
+    'invariant_frame': {
         'augmentation': ['speed', 'rotation', 'flip'],
-        'space_normalization': ['invariant_channel']
+        'space_normalization': ['invariant_frame']
     },
     'invariant_joint': {
         'augmentation': ['speed', 'rotation', 'flip'],
         'space_normalization': ['invariant_joint']
     },
-    'center_invariant_channel': {
+    'invariant_frame_center': {
         'augmentation': ['speed', 'rotation', 'flip'],
-        'space_normalization': ['center', 'invariant_channel']
-    },
-    'center_invariant_joint': {
-        'augmentation': ['speed', 'rotation', 'flip'],
-        'space_normalization': ['center', 'invariant_joint']
+        'space_normalization': ['invariant_frame', 'center']
     }
 }
 
@@ -156,21 +152,28 @@ def build_augmentation_pipeline(augmentation):
 
 
 def build_normalization_pipeline(space_normalization, min_height, max_height):
+    # time normalization that changes number of active frames
+    # therefore it may change min and max values in next step
+    layers = [ResizeIfMoreThan(frames=max_height)]
+
     # space normalization: None or list
+    # it normalizes between 0 and 1 based on min and max values
+    # it may subtract root joint
     if space_normalization == None:
-        layers = []
+        layers = layers + []
     elif type(space_normalization) is str:
-        layers = [SpaceNormalizationDict[space_normalization]]
+        layers = layers + [SpaceNormalizationDict[space_normalization]]
     if type(space_normalization) is list:
-        layers = [SpaceNormalizationDict[norm] for norm in space_normalization]
+        layers = layers + [SpaceNormalizationDict[norm]
+                           for norm in space_normalization]
     else:
         raise Exception("Normalization " +
                         str(space_normalization) + " not found")
 
-    # time normalization same for all
+    # time normalization that pads with 0's
+    # (0's represent no movement)
     layers = layers + [
-        PadIfLessThan(frames=min_height),
-        ResizeIfMoreThan(frames=max_height)
+        PadIfLessThan(frames=min_height)
     ]
 
     pipeline = tf.keras.Sequential(layers, name="normalization")
