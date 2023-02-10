@@ -28,46 +28,45 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     print("[INFO] Configuration:", config, "\n")
 
     # generate train dataset
-    augmentations = "all" if config['training']['augmentation'] else []
+    augmentations = "all" if config['augmentation'] else []
     train_dataset = dataset.get_training_set(
-        batch_size=config['training']['train_batch_size'],
-        repeat=False,
-        buffer_size=5000,
-        deterministic=True,
         input_height=MIN_INPUT_HEIGHT,
-        augmentations=augmentations,
-        normalization=config['model']['normalization'])
+        batch_size=config['batch_size'],
+        buffer_size=5000,
+        repeat=False,
+        deterministic=True,
+        pipeline=config['pipeline'])
 
     # generate val dataset
     validation_dataset = dataset.get_validation_set(
-        batch_size=config['training']['test_batch_size'],
+        batch_size=config['batch_size'],
         min_height=MIN_INPUT_HEIGHT,
         max_height=MAX_INPUT_HEIGHT,
-        normalization=config['model']['normalization'])
+        pipeline=config['pipeline'])
 
     print("[INFO] Dataset Total examples:", dataset.num_total_examples)
     print("[INFO] Dataset Training examples:", dataset.num_train_examples)
 
     # setup optimizer
-    optimizer = build_sgd_optimizer(initial_learning_rate=config['optimizer']['initial_learning_rate'],
-                                    maximal_learning_rate=config['optimizer']['maximal_learning_rate'],
-                                    momentum=config['optimizer']['momentum'],
-                                    nesterov=config['optimizer']['nesterov'],
-                                    step_size=config['optimizer']['step_size'],
-                                    weight_decay=config['optimizer']['weight_decay'])
+    optimizer = build_sgd_optimizer(initial_learning_rate=config['initial_learning_rate'],
+                                    maximal_learning_rate=config['maximal_learning_rate'],
+                                    momentum=config['momentum'],
+                                    nesterov=config['nesterov'],
+                                    step_size=config['step_size'],
+                                    weight_decay=config['weight_decay'])
 
     # setup model
-    if config['model']['backbone'] == "densenet":
+    if config['backbone'] == "densenet":
         model = build_densenet121_model(input_shape=DENSENET_INPUT_SHAPE,
-                                        dropout=config['model']['dropout'],
+                                        dropout=config['dropout'],
                                         optimizer=optimizer,
-                                        pretraining=config['model']['pretraining'])
-    elif config['model']['backbone'] == "mobilenet":
+                                        pretraining=config['pretraining'])
+    elif config['backbone'] == "mobilenet":
         model = build_mobilenetv2_model(input_shape=MOBILENET_INPUT_SHAPE,
-                                        dropout=config['model']['dropout'],
+                                        dropout=config['dropout'],
                                         optimizer=optimizer,
-                                        pretraining=config['model']['pretraining'])
-    elif config['model']['backbone'] == 'nasnet':
+                                        pretraining=config['pretraining'])
+    elif config['backbone'] == 'nasnet':
         model = build_nasnetmobile_model(input_shape=NASNET_INPUT_SHAPE,
                                         dropout=config['dropout'],
                                         optimizer=optimizer,
@@ -87,7 +86,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
     # train model
     model.fit(train_dataset,
-              epochs=config['training']['num_epochs'],
+              epochs=config['num_epochs'],
               verbose=verbose,
               validation_data=validation_dataset,
               callbacks=callbacks)
@@ -98,29 +97,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
 
 def agent_fn(config, project, entity="cv_inside", verbose=0):
     wandb.init(entity=entity, project=project, config=config, reinit=True)
-    local_config = {
-        'model': {
-            'backbone': wandb.config.backbone,
-            'pretraining': wandb.config.pretraining,
-            'dropout': wandb.config.dropout,
-            'normalization': wandb.config.normalization
-        },
-        'optimizer': {
-            'initial_learning_rate': wandb.config.initial_learning_rate,
-            'maximal_learning_rate': wandb.config.maximal_learning_rate,
-            'momentum': wandb.config.momentum,
-            'nesterov': wandb.config.nesterov,
-            'weight_decay': wandb.config.weight_decay,
-            'step_size': wandb.config.step_size
-        },
-        'training': {
-            'train_batch_size': wandb.config.batch_size,
-            'test_batch_size': wandb.config.batch_size,
-            'augmentation':  wandb.config.augmentation,
-            'num_epochs':  wandb.config.num_epochs
-        }
-    }
-    _ = run_experiment(config=local_config, log_to_wandb=True, verbose=verbose)
+    _ = run_experiment(config=wandb.config, log_to_wandb=True, verbose=verbose)
     wandb.finish()
 
 
