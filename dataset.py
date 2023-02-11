@@ -11,21 +11,7 @@ AugmentationDict = {
     'rotation': RandomRotation(factor=15.0, min_value=0.0, max_value=1.0, seed=4),
     'flip': RandomFlip("horizontal", min_value=0.0, max_value=1.0, seed=3),
     'scale': RandomScale(min_value=0.0, max_value=1.0, seed=1),
-    'shift': RandomShift(min_value=0.0, max_value=1.0, seed=2),
-    'all': [
-        RandomSpeed(min_frames=60, max_frames=MIN_INPUT_HEIGHT, seed=5),
-        RandomRotation(factor=15.0, min_value=0.0, max_value=1.0, seed=4),
-        RandomFlip("horizontal", min_value=0.0, max_value=1.0, seed=3),
-        RandomScale(min_value=0.0, max_value=1.0, seed=1),
-        RandomShift(min_value=0.0, max_value=1.0, seed=2)
-    ]
-}
-
-SpaceNormalizationDict = {
-    'invariant_frame': TranslationScaleInvariant(level="frame"),
-    'invariant_joint': TranslationScaleInvariant(level="joint"),
-    'center': Center(around_index=0),
-    'angle': FillBlueWithAngle(x_channel=0, y_channel=1, scale_to=[0, 1])
+    'shift': RandomShift(min_value=0.0, max_value=1.0, seed=2)
 }
 
 NormalizationDict = {
@@ -41,55 +27,45 @@ NormalizationDict = {
 PipelineDict = {
     'default': {
         'augmentation': ['speed', 'rotation', 'flip', 'scale', 'shift'],
-        'space_normalization': [],
-        'train_normalization': [],
+        'train_normalization': ['pad'],
         'test_normalization': ['test_resize', 'pad']
     },
     'invariant_frame': {
         'augmentation': ['speed', 'rotation', 'flip'],
-        'space_normalization': ['invariant_frame'],
         'train_normalization': ['invariant_frame', 'pad'],
         'test_normalization': ['test_resize', 'pad']
     },
     'invariant_joint': {
         'augmentation': ['speed', 'rotation', 'flip'],
-        'space_normalization': ['invariant_joint'],
         'train_normalization': ['invariant_joint', 'pad'],
         'test_normalization': ['test_resize', 'pad']
     },
     'invariant_frame_center': {
         'augmentation': ['speed', 'rotation', 'flip'],
-        'space_normalization': ['invariant_frame', 'center'],
         'train_normalization': ['invariant_frame', 'center', 'pad'],
         'test_normalization': ['test_resize', 'pad']
     },
     'center_invariant_frame': {
         'augmentation': ['speed', 'rotation', 'flip'],
-        'space_normalization': ['center', 'invariant_frame'],
         'train_normalization': ['center', 'invariant_frame', 'pad'],
         'test_normalization': ['test_resize', 'pad']
     },
     'default_center': {
         'augmentation': ['speed', 'rotation', 'flip', 'scale'],
-        'space_normalization': ['center'],
         'train_normalization': ['center', 'pad'],
         'test_normalization': ['test_resize', 'pad']
     },
     'default_angle': {
         'augmentation': ['speed', 'rotation', 'flip', 'scale', 'shift'],
-        'space_normalization': ['angle'],
-        'train_normalization': ['angle'],
+        'train_normalization': ['angle', 'pad'],
         'test_normalization': ['test_resize', 'pad']
     }
 }
 
 
-def dataframe_to_dataset(dataframe, ordered_columns, encoder, filter_video_ids=[]):
-    x_sorted_columns = [col + "_x" for col in ordered_columns]
-    y_sorted_columns = [col + "_y" for col in ordered_columns]
-
-    if len(filter_video_ids) > 0:
-        dataframe = dataframe[dataframe["video"].isin(filter_video_ids)]
+def dataframe_to_dataset(dataframe, columns_order, encoder):
+    x_sorted_columns = [col + "_x" for col in columns_order]
+    y_sorted_columns = [col + "_y" for col in columns_order]
 
     dataframe_length = dataframe.shape[0]
     num_columns = len(x_sorted_columns)
@@ -109,17 +85,16 @@ def dataframe_to_dataset(dataframe, ordered_columns, encoder, filter_video_ids=[
 
 
 def generate_train_dataset(dataframe,
-                           ordered_columns,
-                           train_map_fn,
+                           columns_order,
                            label_encoder,
-                           video_ids=[],
+                           train_map_fn,
                            repeat=False,
                            batch_size=32,
                            buffer_size=5000,
                            deterministic=False):
     # convert dataframe to dataset
     ds = dataframe_to_dataset(
-        dataframe, ordered_columns, label_encoder, video_ids)
+        dataframe, columns_order, label_encoder)
 
     # shuffle, map and batch dataset
     if deterministic:
@@ -143,14 +118,13 @@ def generate_train_dataset(dataframe,
 
 
 def generate_test_dataset(dataframe,
-                          ordered_columns,
-                          test_map_fn,
+                          columns_order,
                           label_encoder,
-                          video_ids=[],
+                          test_map_fn,
                           batch_size=32):
     # convert dataframe to dataset
     ds = dataframe_to_dataset(
-        dataframe, ordered_columns, label_encoder, video_ids)
+        dataframe, columns_order, label_encoder)
 
     # batch dataset
     max_element_length = dataframe \
@@ -174,7 +148,7 @@ def generate_test_dataset(dataframe,
 
 
 def build_augmentation_pipeline(augmentation):
-    # augmentation: 'all', None or list
+    # augmentation: None, str or list
     if augmentation == None:
         layers = []
     elif type(augmentation) is str:
@@ -187,32 +161,18 @@ def build_augmentation_pipeline(augmentation):
     return pipeline
 
 
-def build_normalization_pipeline(space_normalization, min_height, max_height):
-    # space normalization: None or list
-    # it normalizes between 0 and 1 based on min and max values
-    # it may subtract root joint
-    if space_normalization == None:
+def build_normalization_pipeline(normalization):
+    # normalization: None, str or list
+    if normalization == None:
         layers = []
-    elif type(space_normalization) is str:
-        layers = [SpaceNormalizationDict[space_normalization]]
-    if type(space_normalization) is list:
-        layers = [SpaceNormalizationDict[norm]
-                  for norm in space_normalization]
+    elif type(normalization) is str:
+        layers = [NormalizationDict[normalization]]
+    if type(normalization) is list:
+        layers = [NormalizationDict[norm]
+                  for norm in normalization]
     else:
         raise Exception("Normalization " +
-                        str(space_normalization) + " not found")
-
-    # time normalization does not have effect
-    # when speed augmentation is in augmentations
-    # in other case, it may change min and max values
-    layers = layers + [ResizeIfMoreThan(frames=max_height)]
-
-    # padding with 0's must be applied after space normalization
-    # to not affect the minimum and maximum values
-    # and represent no movement with 0's
-    layers = layers + [
-        PadIfLessThan(frames=min_height)
-    ]
+                        str(normalization) + " not found")
 
     pipeline = tf.keras.Sequential(layers, name="normalization")
     return pipeline
@@ -235,10 +195,9 @@ class Dataset():
             num_test_examples = 0
 
         # generate label encoder
+        labels = train_dataframe.groupby("video")["label"].unique().tolist()
         self.label_encoder = OneHotEncoder()
-        video_labels = train_dataframe.groupby(
-            "video")["label"].unique().tolist()
-        self.label_encoder.fit(video_labels)
+        self.label_encoder.fit(labels)
 
         # expose variables
         self.joints_order = joints_order
@@ -254,21 +213,19 @@ class Dataset():
         self.num_total_examples = num_total_examples
 
     def get_training_set(self,
-                         input_height=128,
                          batch_size=32,
                          buffer_size=5000,
                          repeat=False,
                          deterministic=False,
                          augmentation=[],
-                         space_normalization=[],
+                         normalization=[],
                          pipeline=None):
-        # define augmentation+normalization pipeline
+        # define pipeline
         if type(pipeline) is str:
             augmentation = PipelineDict[pipeline]['augmentation']
-            space_normalization = PipelineDict[pipeline]['space_normalization']
+            normalization = PipelineDict[pipeline]['train_normalization']
         augmentation_pipeline = build_augmentation_pipeline(augmentation)
-        normalization_pipeline = build_normalization_pipeline(
-            space_normalization, input_height, input_height)
+        normalization_pipeline = build_normalization_pipeline(normalization)
 
         # define the train map function
         @tf.function
@@ -276,14 +233,13 @@ class Dataset():
             batch = tf.expand_dims(x, axis=0)
             batch = augmentation_pipeline(batch, training=True)
             batch = normalization_pipeline(batch, training=True)
-            x = tf.ensure_shape(batch[0], [input_height, INPUT_WIDTH, 3])
+            x = tf.ensure_shape(batch[0], [MIN_INPUT_HEIGHT, INPUT_WIDTH, 3])
             return x, y
 
         dataset = generate_train_dataset(self.train_dataframe,
                                          self.joints_order,
-                                         train_map_fn,
                                          self.label_encoder,
-                                         video_ids=[],
+                                         train_map_fn,
                                          repeat=repeat,
                                          batch_size=batch_size,
                                          buffer_size=buffer_size,
@@ -293,15 +249,13 @@ class Dataset():
 
     def get_validation_set(self,
                            batch_size=32,
-                           min_height=128,
-                           max_height=256,
-                           space_normalization=None,
+                           normalization=[],
                            pipeline=None):
         # define normalization pipeline
         if type(pipeline) is str:
-            space_normalization = PipelineDict[pipeline]['space_normalization']
+            normalization = PipelineDict[pipeline]['test_normalization']
         normalization_pipeline = build_normalization_pipeline(
-            space_normalization, min_height, max_height)
+            normalization)
 
         # define the val map function
         @tf.function
@@ -312,27 +266,23 @@ class Dataset():
 
         dataset = generate_test_dataset(self.validation_dataframe,
                                         self.joints_order,
-                                        test_map_fn,
                                         self.label_encoder,
-                                        video_ids=[],
+                                        test_map_fn,
                                         batch_size=batch_size)
 
         return dataset
 
     def get_testing_set(self,
                         batch_size=32,
-                        min_height=128,
-                        max_height=256,
-                        space_normalization=None,
+                        normalization=None,
                         pipeline=None):
         if self.test_dataframe is None:
             return None
 
         # define normalization pipeline
         if type(pipeline) is str:
-            space_normalization = PipelineDict[pipeline]['space_normalization']
-        normalization_pipeline = build_normalization_pipeline(
-            space_normalization, min_height, max_height)
+            normalization = PipelineDict[pipeline]['test_normalization']
+        normalization_pipeline = build_normalization_pipeline(normalization)
 
         # define the val map function
         @tf.function
@@ -343,9 +293,8 @@ class Dataset():
 
         dataset = generate_test_dataset(self.test_dataframe,
                                         self.joints_order,
-                                        test_map_fn,
                                         self.label_encoder,
-                                        video_ids=[],
+                                        test_map_fn,
                                         batch_size=batch_size)
 
         return dataset

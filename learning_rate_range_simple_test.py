@@ -27,9 +27,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     print("[INFO] Configuration:", config, "\n")
 
     # generate train dataset
-    augmentations = "all" if config['augmentation'] else []
     train_dataset = dataset.get_training_set(
-        input_height=MIN_INPUT_HEIGHT,
         batch_size=config['batch_size'],
         buffer_size=5000,
         repeat=True,
@@ -39,8 +37,6 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     # generate val dataset
     validation_dataset = dataset.get_validation_set(
         batch_size=config['batch_size'],
-        min_height=MIN_INPUT_HEIGHT,
-        max_height=MAX_INPUT_HEIGHT,
         pipeline=config['pipeline'])
 
     print("[INFO] Dataset Total examples:", dataset.num_total_examples)
@@ -120,85 +116,27 @@ def main(args):
     entity = args.entity
     project = args.project
     sweep_id = args.sweep_id
-    backbone = args.backbone
-    pretraining = args.pretraining
-    augmentation = args.augmentation
-    lr_min = args.lr_min
-    lr_max = args.lr_max
-    lr_delta = args.lr_delta
-    repetitions = args.repetitions
-    normalization = args.normalization
-    stop_patience = args.stop_patience
-
-    if sweep_id is None:
-        sweep_configuration = {
-            'method': 'grid',
-            'name': 'sweep',
-            'metric': {'goal': 'minimize', 'name': 'val_best_loss'},
-            'parameters':
-            {
-                'backbone': {'value': backbone},
-                'augmentation': {'value': augmentation},
-                'pretraining': {'value': pretraining},
-                'initial_learning_rate': {'value': lr_min},
-                'maximal_learning_rate': {'value': lr_max},
-                'learning_rate_delta': {'value': lr_delta},
-                'dropout': {'values': [0.1, 0.3, 0.5]},
-                'weight_decay': {'values': [1e-4, 1e-5, 1e-6, 1e-7]},
-                'batch_size': {'values': [32, 64, 128]},
-                'repetitions': {'values': list(range(1, repetitions + 1))},
-                'normalization': {'value': normalization},
-                'momentum': {'value': 0.9},
-                'nesterov': {'value': True},
-                'stop_patience': {'value': stop_patience}
-            }
-        }
-        sweep_id = wandb.sweep(sweep=sweep_configuration,
-                               project=project, entity=entity)
-
     wandb.agent(sweep_id, project=project, entity=entity, function=agent_fn)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Learning rate range test.')
-    parser.add_argument('--entity', type=str,
-                        help='Entity', default='cv_inside')
-    parser.add_argument('--project', type=str,
-                        help='Project name', default='lrrt-wlasl100-tssi')
-    parser.add_argument('--sweep_id', type=str, help='Sweep id')
-    parser.add_argument('--backbone', type=str,
-                        help='Backbone method: \'densenet\', \'mobilenet\'')
-    parser.add_argument('--pretraining', type=bool, help='Add pretraining')
-    parser.add_argument('--augmentation', type=bool, help='Add augmentation')
-    parser.add_argument('--lr_min', type=float, help='Minimum learning rate')
-    parser.add_argument('--lr_max', type=float, help='Maximal learning rate')
-    parser.add_argument('--lr_delta', type=float,
-                        help='Learning rate increment at every step')
-    parser.add_argument('--repetitions', type=int, help='Repetitions')
-    parser.add_argument('--normalization', type=str,
-                        help='Normalization method (\'neg1_to_1\', \'zero_to_1\'')
-    parser.add_argument('--stop_patience', type=int,
-                        help='Stop patience', default=10)
+    parser = argparse.ArgumentParser(
+        description='Learning rate range test.')
+    parser.add_argument('--entity',
+                        type=str,
+                        help='Entity',
+                        default='cv_inside',
+                        required=True)
+    parser.add_argument('--project',
+                        type=str,
+                        help='Project name',
+                        default='lrrt-wlasl100-tssi',
+                        required=True)
+    parser.add_argument('--sweep_id',
+                        type=str,
+                        help='Sweep id',
+                        required=True)
+
     args = parser.parse_args()
-
-    if args.sweep_id is None:
-        if args.backbone is None:
-            raise Exception("Please provide backbone")
-        if args.pretraining is None:
-            raise Exception("Please provide pretraining")
-        if args.augmentation is None:
-            raise Exception("Please provide augmentation")
-        if args.lr_min is None:
-            raise Exception("Please provide lr_min")
-        if args.lr_max is None:
-            raise Exception("Please provide lr_max")
-        if args.lr_delta is None:
-            raise Exception("Please provide lr_delta")
-        if args.repetitions is None:
-            raise Exception("Please provide repetitions")
-        if args.normalization is None:
-            raise Exception("Please provide normalization")
-
     print(args)
-
     main(args)

@@ -27,9 +27,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     print("[INFO] Configuration:", config, "\n")
 
     # generate train dataset
-    augmentations = "all" if config['augmentation'] else []
     train_dataset = dataset.get_training_set(
-        input_height=MIN_INPUT_HEIGHT,
         batch_size=config['batch_size'],
         buffer_size=5000,
         repeat=False,
@@ -39,12 +37,11 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     # generate val dataset
     validation_dataset = dataset.get_validation_set(
         batch_size=config['batch_size'],
-        min_height=MIN_INPUT_HEIGHT,
-        max_height=MAX_INPUT_HEIGHT,
         pipeline=config['pipeline'])
 
     print("[INFO] Dataset Total examples:", dataset.num_total_examples)
     print("[INFO] Dataset Training examples:", dataset.num_train_examples)
+    print("[INFO] Dataset Validation examples:", dataset.num_val_examples)
 
     # setup optimizer
     optimizer = build_sgd_optimizer(initial_learning_rate=config['initial_learning_rate'],
@@ -65,7 +62,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
                                         dropout=config['dropout'],
                                         optimizer=optimizer,
                                         pretraining=config['pretraining'])
-    elif config['backbone'] == 'nasnet':
+    elif config['backbone'] == "nasnet":
         model = build_nasnetmobile_model(input_shape=NASNET_INPUT_SHAPE,
                                          dropout=config['dropout'],
                                          optimizer=optimizer,
@@ -94,7 +91,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     return model.history
 
 
-def agent_fn(config, project, entity="cv_inside", verbose=0):
+def agent_fn(config, project, entity, verbose=0):
     wandb.init(entity=entity, project=project, config=config, reinit=True)
     _ = run_experiment(config=wandb.config, log_to_wandb=True, verbose=verbose)
     wandb.finish()
@@ -142,7 +139,7 @@ if __name__ == "__main__":
     parser.add_argument('--entity', type=str,
                         help='Entity', default='davidlainesv')
     parser.add_argument('--project', type=str,
-                        help='Project name', default='testing')
+                        help='Project name', default='validation')
     parser.add_argument('--backbone', type=str,
                         help='Backbone method: \'densenet\', \'mobilenet\'',
                         default='densenet')
