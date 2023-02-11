@@ -125,13 +125,11 @@ if __name__ == "__main__":
     parser.add_argument('--entity',
                         type=str,
                         help='Entity',
-                        default='cv_inside',
-                        required=True)
+                        default='cv_inside')
     parser.add_argument('--project',
                         type=str,
                         help='Project name',
-                        default='lrrt-wlasl100-tssi',
-                        required=True)
+                        default='lrrt-wlasl100-tssi')
     parser.add_argument('--sweep_id',
                         type=str,
                         help='Sweep id',
