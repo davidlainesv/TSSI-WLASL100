@@ -1,7 +1,7 @@
 import tensorflow as tf
 from config import INPUT_WIDTH, MAX_INPUT_HEIGHT, MIN_INPUT_HEIGHT
 from data_augmentation import RandomFlip, RandomScale, RandomShift, RandomRotation, RandomSpeed
-from preprocessing import Center, PadIfLessThan, ResizeIfMoreThan, TranslationScaleInvariant, preprocess_dataframe
+from preprocessing import Center, FillBlueWithAngle, PadIfLessThan, ResizeIfMoreThan, TranslationScaleInvariant, preprocess_dataframe
 from skeleton_graph import tssi_v2
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
@@ -33,7 +33,8 @@ NormalizationDict = {
     'center': Center(around_index=0),
     'train_resize': ResizeIfMoreThan(frames=MIN_INPUT_HEIGHT),
     'test_resize': ResizeIfMoreThan(frames=MAX_INPUT_HEIGHT),
-    'pad': PadIfLessThan(frames=MIN_INPUT_HEIGHT)
+    'pad': PadIfLessThan(frames=MIN_INPUT_HEIGHT),
+    'angle': FillBlueWithAngle(x_channel=0, y_channel=1, scale_to=[0, 1])
 }
 
 PipelineDict = {
@@ -71,6 +72,12 @@ PipelineDict = {
         'augmentation': ['speed', 'rotation', 'flip', 'scale'],
         'space_normalization': ['center'],
         'train_normalization': ['center', 'pad'],
+        'test_normalization': ['test_resize', 'pad']
+    },
+    'default_angle': {
+        'augmentation': ['speed', 'rotation', 'flip', 'scale', 'shift'],
+        'space_normalization': ['angle'],
+        'train_normalization': ['angle'],
         'test_normalization': ['test_resize', 'pad']
     }
 }

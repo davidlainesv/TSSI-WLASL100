@@ -1,12 +1,7 @@
+import math
 import tensorflow as tf
 import numpy as np
 from mediapipe.python.solutions.pose import PoseLandmark
-from enum import Enum
-
-
-class Normalization(str, Enum):
-    Neg1To1 = 'neg1_to_1'
-    Legacy = 'legacy'
 
 
 def replace_nan_with_other_column(
@@ -86,38 +81,6 @@ def preprocess_dataframe(dataframe, select_columns=[], with_root=True, with_midh
         base_columns = list(dataframe.columns[:3])
         unique_columns = list(np.unique(select_columns))
         dataframe = dataframe.loc[:, base_columns + unique_columns]
-
-    return dataframe
-
-
-def normalize_dataframe(dataframe, normalization=Normalization.Neg1To1):
-    if normalization == Normalization.Neg1To1:
-        return normalize_dataframe_from_neg1_to_1(dataframe)
-    elif normalization == Normalization.Legacy:
-        return normalize_dataframe_legacy(dataframe)
-    else:
-        raise Exception(f"Unknown normalization: {normalization}")
-
-
-def normalize_dataframe_from_neg1_to_1(dataframe):
-    dataframe = dataframe.copy()
-
-    # obtain x, y columns
-    x_columns = dataframe.columns[3::2]
-    y_columns = dataframe.columns[4::2]
-    xy_columns = dataframe.columns[3:]
-
-    # center x, y columns
-    root_arr = dataframe[['root_x', 'root_y']].to_numpy()
-    dataframe.loc[:, x_columns] = dataframe[x_columns] - \
-        root_arr[:, 0][:, None]
-    dataframe.loc[:, y_columns] = dataframe[y_columns] - \
-        root_arr[:, 1][:, None]
-
-    # scale to (-1, 1)
-    xy_data = dataframe[xy_columns]
-    scales = xy_data.abs().max(axis=1).to_numpy()[:, np.newaxis]
-    dataframe.loc[:, xy_columns] = xy_data / scales
 
     return dataframe
 
@@ -311,3 +274,24 @@ class TranslationScaleInvariant(tf.keras.layers.Layer):
             lambda: self.frame_level(batch),
             lambda: self.joint_level(batch))
         return batch
+
+
+class FillBlueWithAngle(tf.keras.layers.Layer):
+    def __init__(self, x_channel=0, y_channel=1, scale_to=[0, 1], **kwargs):
+        super().__init__(**kwargs)
+        self.x_channel = x_channel
+        self.y_channel = y_channel
+        self.scale_to = scale_to
+
+    @tf.function
+    def call(self, batch):
+        batch = tf.cast(batch, tf.float32)
+        unstacked = tf.unstack(batch, axis=-1)
+        x, y = unstacked[self.x_channel], unstacked[self.y_channel]
+        angles = tf.math.atan2(y, x) * (180 / math.pi) % 360
+        data_min, data_max = 0, 359
+        range_min, range_max = self.scale_to
+        std = (angles - data_min) / (data_max - data_min)
+        scaled = std * (range_max - range_min) + range_min
+
+        return tf.stack([x, y, scaled], axis=-1)
