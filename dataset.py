@@ -24,7 +24,8 @@ AugmentationDict = {
 SpaceNormalizationDict = {
     'invariant_frame': TranslationScaleInvariant(level="frame"),
     'invariant_joint': TranslationScaleInvariant(level="joint"),
-    'center': Center(around_index=0)
+    'center': Center(around_index=0),
+    'angle': FillBlueWithAngle(x_channel=0, y_channel=1, scale_to=[0, 1])
 }
 
 NormalizationDict = {
