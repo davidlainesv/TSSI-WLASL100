@@ -24,6 +24,7 @@ class SplitDataset():
 
         # obtain characteristics of the dataset
         num_total_examples = len(main_dataframe["video"].unique())
+        labels = main_dataframe.groupby("video")["label"].unique().tolist()
 
         # generate k-fold cross validator
         skf = StratifiedKFold(num_splits, shuffle=True,
@@ -35,7 +36,6 @@ class SplitDataset():
         num_val_examples = len(splits[0][1])
 
         # generate label encoder
-        labels = main_dataframe.groupby("video")["label"].unique().tolist()
         self.label_encoder = OneHotEncoder()
         self.label_encoder.fit(labels)
 
