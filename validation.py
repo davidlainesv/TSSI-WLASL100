@@ -1,5 +1,5 @@
 import argparse
-from config import DENSENET_INPUT_SHAPE, MAX_INPUT_HEIGHT, MIN_INPUT_HEIGHT, MOBILENET_INPUT_SHAPE, NASNET_INPUT_SHAPE, RANDOM_SEED
+from config import DENSENET_INPUT_SHAPE, MOBILENET_INPUT_SHAPE, NASNET_INPUT_SHAPE, RANDOM_SEED
 from dataset import Dataset
 import numpy as np
 import wandb
