@@ -120,8 +120,8 @@ class SplitDataset():
 
         dataset = generate_test_dataset(val_dataframe,
                                         self.joints_order,
-                                        test_map_fn,
                                         self.label_encoder,
+                                        test_map_fn,
                                         batch_size=batch_size)
 
         return dataset
