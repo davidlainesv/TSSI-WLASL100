@@ -33,32 +33,32 @@ PipelineDict = {
     'invariant_frame': {
         'augmentation': ['speed', 'rotation', 'flip'],
         'train_normalization': ['invariant_frame', 'pad'],
-        'test_normalization': ['test_resize', 'pad']
+        'test_normalization': ['test_resize', 'invariant_frame', 'pad']
     },
     'invariant_joint': {
         'augmentation': ['speed', 'rotation', 'flip'],
         'train_normalization': ['invariant_joint', 'pad'],
-        'test_normalization': ['test_resize', 'pad']
+        'test_normalization': ['test_resize', 'invariant_joint', 'pad']
     },
     'invariant_frame_center': {
         'augmentation': ['speed', 'rotation', 'flip'],
         'train_normalization': ['invariant_frame', 'center', 'pad'],
-        'test_normalization': ['test_resize', 'pad']
+        'test_normalization': ['test_resize', 'invariant_frame', 'center', 'pad']
     },
     'center_invariant_frame': {
         'augmentation': ['speed', 'rotation', 'flip'],
         'train_normalization': ['center', 'invariant_frame', 'pad'],
-        'test_normalization': ['test_resize', 'pad']
+        'test_normalization': ['test_resize', 'center', 'invariant_frame', 'pad']
     },
     'default_center': {
         'augmentation': ['speed', 'rotation', 'flip', 'scale'],
         'train_normalization': ['center', 'pad'],
-        'test_normalization': ['test_resize', 'pad']
+        'test_normalization': ['test_resize', 'center', 'pad']
     },
     'default_angle': {
         'augmentation': ['speed', 'rotation', 'flip', 'scale', 'shift'],
         'train_normalization': ['angle', 'pad'],
-        'test_normalization': ['test_resize', 'pad']
+        'test_normalization': ['test_resize', 'angle', 'pad']
     }
 }
 
