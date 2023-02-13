@@ -76,7 +76,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
         log_each_steps=config['log_each_steps'],
         stop_factor=LRRT_STOP_FACTOR,
         stop_patience=config['stop_patience'],
-        loss_min_delta=LRRT_LOSS_MIN_DELTA,
+        loss_min_delta=config['loss_min_delta'],
         log_to_wandb=log_to_wandb)
 
     # train model
