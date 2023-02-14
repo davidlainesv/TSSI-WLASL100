@@ -8,6 +8,7 @@ import tensorflow as tf
 import pandas as pd
 from model import build_densenet121_model, build_mobilenetv2_model, build_nasnetmobile_model
 from optimizer import build_sgd_optimizer
+from utils import str2bool
 
 # Load data
 train_dataframe = pd.read_csv("wlasl100_skeletons_train.csv", index_col=0)
@@ -143,7 +144,7 @@ if __name__ == "__main__":
     parser.add_argument('--backbone', type=str,
                         help='Backbone method: \'densenet\', \'mobilenet\'',
                         default='densenet')
-    parser.add_argument('--pretraining', type=bool,
+    parser.add_argument('--pretraining', type=str2bool,
                         help='Add pretraining', default=True)
     parser.add_argument('--augmentation', type=bool,
                         help='Add augmentation', default=False)
