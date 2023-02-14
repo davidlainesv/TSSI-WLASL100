@@ -1,5 +1,5 @@
 import argparse
-from config import DENSENET_INPUT_SHAPE, MAX_INPUT_HEIGHT, MIN_INPUT_HEIGHT, MOBILENET_INPUT_SHAPE, NASNET_INPUT_SHAPE, RANDOM_SEED
+from config import DENSENET_INPUT_SHAPE, MOBILENET_INPUT_SHAPE, NASNET_INPUT_SHAPE, RANDOM_SEED
 from dataset import Dataset
 import numpy as np
 import wandb
@@ -8,7 +8,6 @@ import tensorflow as tf
 import pandas as pd
 from model import build_densenet121_model, build_mobilenetv2_model, build_nasnetmobile_model
 from optimizer import build_sgd_optimizer
-from preprocessing import Normalization
 
 # Load data
 train_dataframe = pd.read_csv("wlasl100_skeletons_train.csv", index_col=0)
