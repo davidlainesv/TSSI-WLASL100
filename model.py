@@ -1,5 +1,5 @@
 import tensorflow as tf
-from efficient_net_b0 import EfficientNetB0
+# from efficient_net_b0 import EfficientNetB0
 from mobile_net_v2_model import MobileNetV2
 from tensorflow.keras.metrics import TopKCategoricalAccuracy
 from tensorflow.keras.layers import Dropout, Dense
@@ -8,7 +8,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.applications.densenet import DenseNet121
 # from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2
 from tensorflow.keras.applications.nasnet import NASNetMobile
-# from tensorflow.keras.applications.efficientnet import EfficientNetB0
+from tensorflow.keras.applications.efficientnet import EfficientNetB0
 
 
 def build_densenet121_model(input_shape=[None, 128, 3], dropout=0,
