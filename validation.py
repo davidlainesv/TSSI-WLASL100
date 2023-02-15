@@ -6,7 +6,7 @@ import wandb
 from wandb.keras import WandbCallback
 import tensorflow as tf
 import pandas as pd
-from model import build_densenet121_model, build_mobilenetv2_model, build_nasnetmobile_model
+from model import build_densenet121_model, build_efficientnet_model, build_mobilenetv2_model, build_nasnetmobile_model
 from optimizer import build_sgd_optimizer
 from utils import str2bool
 
@@ -69,7 +69,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
                                          optimizer=optimizer,
                                          pretraining=config['pretraining'])
     elif config['backbone'] == "efficientnet":
-        model = build_nasnetmobile_model(input_shape=GENERIC_INPUT_SHAPE,
+        model = build_efficientnet_model(input_shape=GENERIC_INPUT_SHAPE,
                                          dropout=config['dropout'],
                                          optimizer=optimizer,
                                          pretraining=config['pretraining'])
