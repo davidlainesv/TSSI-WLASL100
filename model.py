@@ -87,7 +87,7 @@ def build_efficientnet_model(input_shape=[None, 128, 3], dropout=0,
     weights = "imagenet" if pretraining else None
     inputs = Input(shape=input_shape)
     inputs = tf.keras.layers.Resizing(128, 128)(inputs)
-    inputs = inputs * 255
+    # inputs = inputs * 255
     x = EfficientNetB0(input_shape=input_shape, weights=weights,
                      include_top=False, pooling="avg")(inputs)
     x = Dropout(dropout)(x)
