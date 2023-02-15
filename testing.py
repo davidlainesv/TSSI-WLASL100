@@ -1,5 +1,5 @@
 import argparse
-from config import DENSENET_INPUT_SHAPE, MOBILENET_INPUT_SHAPE, NASNET_INPUT_SHAPE, RANDOM_SEED
+from config import DENSENET_INPUT_SHAPE, GENERIC_INPUT_SHAPE, MOBILENET_INPUT_SHAPE, NASNET_INPUT_SHAPE, RANDOM_SEED
 from dataset import Dataset
 import numpy as np
 import wandb
@@ -72,6 +72,11 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
                                         pretraining=config['pretraining'])
     elif config['backbone'] == "nasnet":
         model = build_nasnetmobile_model(input_shape=NASNET_INPUT_SHAPE,
+                                         dropout=config['dropout'],
+                                         optimizer=optimizer,
+                                         pretraining=config['pretraining'])
+    elif config['backbone'] == "efficientnet":
+        model = build_nasnetmobile_model(input_shape=GENERIC_INPUT_SHAPE,
                                          dropout=config['dropout'],
                                          optimizer=optimizer,
                                          pretraining=config['pretraining'])
