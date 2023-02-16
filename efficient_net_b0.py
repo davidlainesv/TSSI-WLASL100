@@ -347,7 +347,7 @@ def EfficientNet(
     # Build stem
     x = img_input
     # x = layers.Rescaling(1.0 / 255.0)(x)
-    # x = layers.Normalization(axis=bn_axis)(x)
+    x = layers.Normalization(axis=bn_axis)(x)
     if weights == "imagenet":
         # Note that the normaliztion layer uses square value of STDDEV as the
         # variance for the layer: result = (input - mean) / sqrt(var)
