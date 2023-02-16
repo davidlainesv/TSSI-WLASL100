@@ -1,7 +1,6 @@
 import argparse
-from config import INPUT_SHAPE, NUM_SPLITS, RANDOM_SEED
-from dataset import generate_dataset, augmentations_order
-from sklearn.model_selection import StratifiedKFold
+from config import DENSENET_INPUT_SHAPE, GENERIC_INPUT_SHAPE, MOBILENET_INPUT_SHAPE, RANDOM_SEED
+from dataset import Dataset
 import numpy as np
 import wandb
 from wandb.keras import WandbCallback
@@ -10,27 +9,19 @@ from optimizer import build_sgd_optimizer
 import tensorflow as tf
 import pandas as pd
 
-
-# """ Download data"""
-# !wget "https://storage.googleapis.com/cloud-ai-platform-f3305919-42dc-47f1-82cf-4f1a3202db74/wlasl100_skeletons_train.csv" -nc
-# !wget "https://storage.googleapis.com/cloud-ai-platform-f3305919-42dc-47f1-82cf-4f1a3202db74/wlasl100_skeletons_val.csv" -nc
-# !wget "https://storage.googleapis.com/cloud-ai-platform-f3305919-42dc-47f1-82cf-4f1a3202db74/wlasl100_skeletons_test.csv" -nc
-
 # Load data
 train_dataframe = pd.read_csv("wlasl100_skeletons_train.csv", index_col=0)
 validation_dataframe = pd.read_csv("wlasl100_skeletons_val.csv", index_col=0)
+test_dataframe = pd.read_csv("wlasl100_skeletons_test.csv", index_col=0)
+
+
 validation_dataframe["video"] = validation_dataframe["video"] + \
     train_dataframe["video"].max() + 1
 train_and_validation_dataframe = pd.concat(
     [train_dataframe, validation_dataframe], axis=0, ignore_index=True)
 
-# Split data
-skf = StratifiedKFold(NUM_SPLITS)
-num_total_examples = len(train_and_validation_dataframe["video"].unique())
-labels = train_and_validation_dataframe.groupby(
-    "video")["label"].unique().tolist()
-splits = list(skf.split(np.zeros(num_total_examples), labels))
-num_train_examples = len(splits[0][0])
+dataset = Dataset(train_and_validation_dataframe, test_dataframe)
+del train_dataframe, validation_dataframe, test_dataframe
 
 
 def run_experiment(config=None, log_to_wandb=True, verbose=0):
@@ -43,91 +34,102 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
         return
     print("[INFO] Configuration:", config, "\n")
 
-    # select split (1...NUM_SPLITS)
-    print("Training on split {}".format(config["split"]))
-    split_indices = splits[config["split"] - 1]
-    train_indices, val_indices = split_indices
-
-    # generate dataset
-    if config["ablation"] == "none":
-        augmentations = "all"
-    else:
-        augmentations = augmentations_order.copy()
-        augmentations.remove(config["ablation"])
-    train_dataset = generate_dataset(
-        train_and_validation_dataframe,
-        video_ids=train_indices,
-        training=True,
-        batch_size=config['train_batch_size'],
-        buffer_size=5000,
+    # generate train dataset
+    train_dataset = dataset.get_training_set(
+        batch_size=config['batch_size'],
+        buffer_size=dataset.num_train_examples,
+        repeat=False,
         deterministic=True,
-        augmentations=augmentations)
+        pipeline=config['pipeline'])
 
     # generate val dataset
-    validation_dataset = generate_dataset(
-        train_and_validation_dataframe,
-        video_ids=val_indices,
-        training=False,
-        batch_size=config['test_batch_size'])
+    validation_dataset = dataset.get_validation_set(
+        batch_size=config['batch_size'],
+        pipeline=config['pipeline'])
+
+    print("[INFO] Dataset Total examples:", dataset.num_total_examples)
+    print("[INFO] Dataset Training examples:", dataset.num_train_examples)
+    print("[INFO] Dataset Training examples:", dataset.num_val_examples)
 
     # setup optimizer
     optimizer = build_sgd_optimizer(initial_learning_rate=config['initial_learning_rate'],
                                     maximal_learning_rate=config['maximal_learning_rate'],
-                                    step_size=config['step_size'], momentum=config['momentum'],
-                                    nesterov=config['nesterov'], weight_decay=config['weight_decay'])
+                                    momentum=config['momentum'],
+                                    nesterov=config['nesterov'],
+                                    step_size=config['step_size'],
+                                    weight_decay=config['weight_decay'])
 
     # setup model
     if config['backbone'] == "densenet":
-        model = build_densenet121_model(input_shape=INPUT_SHAPE,
+        model = build_densenet121_model(input_shape=DENSENET_INPUT_SHAPE,
                                         dropout=config['dropout'],
                                         optimizer=optimizer,
                                         pretraining=config['pretraining'])
     elif config['backbone'] == "mobilenet":
-        model = build_mobilenetv2_model(input_shape=INPUT_SHAPE,
+        model = build_mobilenetv2_model(input_shape=MOBILENET_INPUT_SHAPE,
                                         dropout=config['dropout'],
                                         optimizer=optimizer,
                                         pretraining=config['pretraining'])
+    elif config['backbone'] == "efficientnet":
+        model = build_efficientnet_model(input_shape=GENERIC_INPUT_SHAPE,
+                                         dropout=config['dropout'],
+                                         optimizer=optimizer,
+                                         pretraining=config['pretraining'])
+    else:
+        raise Exception("Unknown model name")
 
-    # setup callback
+    # setup callbacks
     callbacks = []
     if log_to_wandb:
         wandb_callback = WandbCallback(
             monitor="val_top_1",
             mode="max",
-            save_model=False
+            save_weights_only=True
         )
-        callbacks = [wandb_callback]
+        callbacks.append(wandb_callback)
 
     # train model
     model.fit(train_dataset,
-              validation_data=validation_dataset,
               epochs=config['num_epochs'],
               verbose=verbose,
+              validation_data=validation_dataset,
               callbacks=callbacks)
+
+    # get the logs of the model
+    return model.history
+
+
+def agent_fn(config, project, entity, verbose=0):
+    wandb.init(entity=entity, project=project, config=config, reinit=True)
+    _ = run_experiment(config=wandb.config, log_to_wandb=True, verbose=verbose)
+    wandb.finish()
 
 
 def main(args):
-    available_ablations = ['scale', 'shift',
-                           'flip', 'rotation', 'speed', 'none']
+    ablations = [
+        'ablation_speed_default_center',
+        'ablation_rotation_default_center',
+        'ablation_flip_default_center',
+        'ablation_scale_default_center'
+    ]
 
     entity = args.entity
     project = args.project
     lr_min = args.lr_min
     lr_max = args.lr_max
     backbone = args.backbone
+    augmentation = args.augmentation
     pretraining = args.pretraining
     dropout = args.dropout
     weight_decay = args.weight_decay
-    num_epochs = args.num_epochs
     batch_size = args.batch_size
+    num_epochs = args.num_epochs
+    pipeline = args.pipeline
 
-    ablations = [abl for abl in args.ablations.split()
-                 if abl in available_ablations]
+    steps_per_epoch = np.ceil(dataset.num_train_examples / batch_size)
 
-    steps_per_epoch = np.ceil(num_train_examples / batch_size)
-
-    for ablation in ablations:
-        for split in list(range(1, NUM_SPLITS + 1)):
+    for pipeline in ablations:
+        for _ in range(5):
             config = {
                 'backbone': backbone,
                 'pretraining': pretraining,
@@ -141,44 +143,44 @@ def main(args):
                 'step_size': int(num_epochs / 2) * steps_per_epoch,
 
                 'num_epochs': num_epochs,
-                'train_batch_size': batch_size,
-                'test_batch_size': batch_size,
-                'ablation': ablation,
-                'split': split
+                'augmentation': augmentation,
+                'ablation': pipeline.split("_")[1],
+                'batch_size': batch_size,
+                'pipeline': pipeline
             }
 
-            run = wandb.init(reinit=True, entity=entity,
-                             project=project, config=config)
-            run_experiment(config=config, log_to_wandb=True, verbose=0)
-            run.finish()
+            agent_fn(config=config, project=project, entity=entity, verbose=2)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Learning rate range test.')
+    parser = argparse.ArgumentParser(description='Ablation')
     parser.add_argument('--entity', type=str,
-                        help='Entity', default='cv_inside')
+                        help='Entity', default='davidlainesv')
     parser.add_argument('--project', type=str,
-                        help='Project name', required=True)
-    parser.add_argument('--ablations', type=str,
-                        help='Ablations (performed individually): "scale", "shift", "flip", "rotation", "speed", "none"',
-                        required=True)
+                        help='Project name', default='augmentation-ablation')
     parser.add_argument('--backbone', type=str,
                         help='Backbone method: \'densenet\', \'mobilenet\'',
-                        required=True)
-    parser.add_argument('--pretraining', type=bool, help='Add pretraining',
-                        required=True)
-    parser.add_argument('--lr_min', type=float, help='Minimum learning rate',
-                        required=True)
-    parser.add_argument('--lr_max', type=float, help='Maximum learning rate',
-                        required=True)
-    parser.add_argument('--weight_decay', type=float, help='Weight decay',
-                        required=True)
-    parser.add_argument('--dropout', type=float, help='Dropout',
-                        required=True)
+                        default='densenet')
+    parser.add_argument('--pretraining', type=bool,
+                        help='Add pretraining', default=True)
+    parser.add_argument('--augmentation', type=bool,
+                        help='Add augmentation', default=False)
+    parser.add_argument('--lr_min', type=float,
+                        help='Minimum learning rate', default=0.0001)
+    parser.add_argument('--lr_max', type=float,
+                        help='Minimum learning rate', default=0.001)
+    parser.add_argument('--dropout', type=float,
+                        help='Minimum learning rate', default=0.3)
+    parser.add_argument('--weight_decay', type=float,
+                        help='Minimum learning rate', default=1e-7)
     parser.add_argument('--batch_size', type=int,
-                        help='Batch size (train & test)', required=True)
+                        help='Batch size of training and testing', default=32)
     parser.add_argument('--num_epochs', type=int,
-                        help='Number of epochs', required=True)
+                        help='Number of epochs', default=100)
+    parser.add_argument('--pipeline', type=str,
+                        help='Pipeline', default="default")
     args = parser.parse_args()
+
+    print(args)
 
     main(args)
