@@ -89,7 +89,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
         wandb_callback = WandbCallback(
             monitor="val_top_1",
             mode="max",
-            save_model=False
+            save_weights_only=True
         )
         callbacks.append(wandb_callback)
 
