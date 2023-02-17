@@ -87,7 +87,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
             save_model=False
         )
         wandb_model_checkpoint = WandbModelCheckpoint(
-            f"artifacts/{wandb.run.id}/weights.h5",
+            f"ablation/{wandb.run.id}/weights",
             save_weights_only=True,
             save_freq=config['save_freq'],
             verbose=1
