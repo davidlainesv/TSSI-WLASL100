@@ -32,7 +32,8 @@ PipelineDict = {
         'test_normalization': ['test_resize', 'pad']
     },
     'default_norm': {
-        'augmentation': ['speed', 'rotation', 'flip', 'scale', 'shift'],
+        #'augmentation': ['speed', 'rotation', 'flip', 'scale', 'shift'],
+        'augmentation': ['speed', 'flip', 'scale'],
         'train_normalization': ['pad', 'norm'],
         'test_normalization': ['test_resize', 'pad', 'norm']
     },
