@@ -81,12 +81,19 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     # setup callbacks
     callbacks = []
     if log_to_wandb:
-        wandb_callback = WandbCallback(
+        wandb_logger = WandbCallback(
             monitor="val_top_1",
             mode="max",
             save_model=False
         )
-        callbacks.append(wandb_callback)
+        wandb_model_checkpoint = WandbModelCheckpoint(
+            f"artifacts/{wandb.run.id}/weights.h5",
+            save_weights_only=True,
+            save_freq=config['save_freq'],
+            verbose=1
+        )
+        callbacks.append(wandb_logger)
+        callbacks.append(wandb_model_checkpoint)
 
     # train model
     model.fit(train_dataset,
@@ -107,10 +114,9 @@ def agent_fn(config, project, entity, verbose=0):
 
 def main(args):
     ablations = [
-        'ablation_speed_default_center',
-        'ablation_rotation_default_center',
-        'ablation_flip_default_center',
-        'ablation_scale_default_center'
+        'ablation_speed_default_norm',
+        'ablation_flip_default_norm',
+        'ablation_scale_default_norm'
     ]
 
     entity = args.entity
@@ -125,6 +131,7 @@ def main(args):
     batch_size = args.batch_size
     num_epochs = args.num_epochs
     pipeline = args.pipeline
+    save_freq = args.save_freq
 
     steps_per_epoch = np.ceil(dataset.num_train_examples / batch_size)
 
@@ -146,7 +153,9 @@ def main(args):
                 'augmentation': augmentation,
                 'ablation': pipeline.split("_")[1],
                 'batch_size': batch_size,
-                'pipeline': pipeline
+                'pipeline': pipeline,
+
+                'save_freq': int(steps_per_epoch * save_freq)
             }
 
             agent_fn(config=config, project=project, entity=entity, verbose=2)
@@ -179,6 +188,8 @@ if __name__ == "__main__":
                         help='Number of epochs', default=100)
     parser.add_argument('--pipeline', type=str,
                         help='Pipeline', default="default")
+    parser.add_argument('--save_freq', type=int,
+                        help='Save weights at epoch', default=100)
     args = parser.parse_args()
 
     print(args)
