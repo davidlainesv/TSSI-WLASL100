@@ -86,12 +86,16 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     # setup callbacks
     callbacks = []
     if log_to_wandb:
-        wandb_logger = WandbMetricsLogger()
+        wandb_logger = WandbCallback(
+            monitor="val_top_1",
+            mode="max",
+            save_model=False
+        )
         wandb_model_checkpoint = WandbModelCheckpoint(
             f"saved_weights/{wandb.run.id}",
             save_weights_only=True,
             save_freq=config['save_freq'],
-            verbose=0
+            verbose=1
         )
         callbacks.append(wandb_logger)
         callbacks.append(wandb_model_checkpoint)
