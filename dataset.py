@@ -22,7 +22,9 @@ NormalizationDict = {
     'test_resize': ResizeIfMoreThan(frames=MAX_INPUT_HEIGHT),
     'pad': PadIfLessThan(frames=MIN_INPUT_HEIGHT),
     'angle': FillBlueWithAngle(x_channel=0, y_channel=1, scale_to=[0, 1]),
-    'norm': tf.keras.layers.Normalization(axis=-1, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    'norm': tf.keras.layers.Normalization(axis=-1,
+            mean=[0.485, 0.456, 0.406],
+            variance=[0.052441, 0.050176, 0.050625])
 }
 
 PipelineDict = {
