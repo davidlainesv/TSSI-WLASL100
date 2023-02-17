@@ -21,7 +21,8 @@ NormalizationDict = {
     'train_resize': ResizeIfMoreThan(frames=MIN_INPUT_HEIGHT),
     'test_resize': ResizeIfMoreThan(frames=MAX_INPUT_HEIGHT),
     'pad': PadIfLessThan(frames=MIN_INPUT_HEIGHT),
-    'angle': FillBlueWithAngle(x_channel=0, y_channel=1, scale_to=[0, 1])
+    'angle': FillBlueWithAngle(x_channel=0, y_channel=1, scale_to=[0, 1]),
+    'norm': tf.keras.layers.Normalization(axis=-1, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 }
 
 PipelineDict = {
@@ -29,6 +30,11 @@ PipelineDict = {
         'augmentation': ['speed', 'rotation', 'flip', 'scale', 'shift'],
         'train_normalization': ['pad'],
         'test_normalization': ['test_resize', 'pad']
+    },
+    'default_norm': {
+        'augmentation': ['speed', 'rotation', 'flip', 'scale', 'shift'],
+        'train_normalization': ['pad', 'norm'],
+        'test_normalization': ['test_resize', 'pad', 'norm']
     },
     'invariant_frame': {
         'augmentation': ['speed', 'rotation', 'flip'],
