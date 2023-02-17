@@ -4,7 +4,7 @@ from dataset import Dataset
 import numpy as np
 import wandb
 from wandb.keras import WandbCallback
-from model import build_densenet121_model, build_mobilenetv2_model
+from model import build_densenet121_model, build_efficientnet_model, build_mobilenetv2_model
 from optimizer import build_sgd_optimizer
 import tensorflow as tf
 import pandas as pd
