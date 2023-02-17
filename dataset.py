@@ -95,6 +95,23 @@ PipelineDict = {
         'augmentation': ['speed', 'rotation', 'flip', 'scale'],
         'train_normalization': ['center', 'pad'],
         'test_normalization': ['test_resize', 'center', 'pad']
+    },
+
+    'ablation_speed_default_norm': {
+        'augmentation': ['flip', 'scale'],
+        'train_normalization': ['pad', 'norm'],
+        'train_normalization': ['train_resize', 'pad', 'norm'],
+        'test_normalization': ['test_resize', 'pad', 'norm']
+    },
+    'ablation_flip_default_norm': {
+        'augmentation': ['speed', 'scale'],
+        'train_normalization': ['pad', 'norm'],
+        'test_normalization': ['test_resize', 'pad', 'norm']
+    },
+    'ablation_scale_default_norm': {
+        'augmentation': ['speed', 'flip'],
+        'train_normalization': ['pad', 'norm'],
+        'test_normalization': ['test_resize', 'pad', 'norm']
     }
 }
 
