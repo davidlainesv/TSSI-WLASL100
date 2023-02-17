@@ -3,7 +3,7 @@ from config import DENSENET_INPUT_SHAPE, GENERIC_INPUT_SHAPE, MOBILENET_INPUT_SH
 from dataset import Dataset
 import numpy as np
 import wandb
-from wandb.keras import WandbCallback
+from wandb.keras import WandbCallback, WandbMetricsLogger, WandbModelCheckpoint
 import tensorflow as tf
 import pandas as pd
 from model import build_densenet121_model, build_efficientnet_model, build_mobilenetv2_model, build_nasnetmobile_model
@@ -86,12 +86,14 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     # setup callbacks
     callbacks = []
     if log_to_wandb:
-        wandb_callback = WandbCallback(
-            monitor="val_top_1",
-            mode="max",
-            save_weights_only=True
+        wandb_logger = WandbMetricsLogger()
+        wandb_model_checkpoint = WandbModelCheckpoint(
+            save_weights_only=True,
+            save_freq=config['save_freq'],
+            verbose=0
         )
-        callbacks.append(wandb_callback)
+        callbacks.append(wandb_logger)
+        callbacks.append(wandb_model_checkpoint)
 
     # train model
     model.fit(train_dataset,
@@ -109,6 +111,7 @@ def agent_fn(config, project, entity, verbose=0):
     _ = run_experiment(config=wandb.config, log_to_wandb=True, verbose=verbose)
     wandb.finish()
 
+
 def main(args):
     entity = args.entity
     project = args.project
@@ -122,6 +125,7 @@ def main(args):
     batch_size = args.batch_size
     num_epochs = args.num_epochs
     pipeline = args.pipeline
+    save_freq = args.save_freq
 
     steps_per_epoch = np.ceil(dataset.num_train_examples / batch_size)
 
@@ -140,7 +144,9 @@ def main(args):
         'num_epochs': num_epochs,
         'augmentation': augmentation,
         'batch_size': batch_size,
-        'pipeline': pipeline
+        'pipeline': pipeline,
+
+        'save_freq': steps_per_epoch * save_freq
     }
 
     agent_fn(config=config, project=project, entity=entity, verbose=2)
@@ -173,6 +179,8 @@ if __name__ == "__main__":
                         help='Number of epochs', default=100)
     parser.add_argument('--pipeline', type=str,
                         help='Pipeline', default="default")
+    parser.add_argument('--save_freq', type=int,
+                        help='Save weights at epoch', default=100)
     args = parser.parse_args()
 
     print(args)
