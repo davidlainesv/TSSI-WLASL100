@@ -88,6 +88,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     if log_to_wandb:
         wandb_logger = WandbMetricsLogger()
         wandb_model_checkpoint = WandbModelCheckpoint(
+            f"saved_weights/{wandb.run.id}",
             save_weights_only=True,
             save_freq=config['save_freq'],
             verbose=0
