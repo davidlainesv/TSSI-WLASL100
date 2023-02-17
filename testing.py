@@ -147,7 +147,7 @@ def main(args):
         'batch_size': batch_size,
         'pipeline': pipeline,
 
-        'save_freq': steps_per_epoch * save_freq
+        'save_freq': int(steps_per_epoch * save_freq)
     }
 
     agent_fn(config=config, project=project, entity=entity, verbose=2)
