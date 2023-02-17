@@ -3,7 +3,7 @@ from config import DENSENET_INPUT_SHAPE, GENERIC_INPUT_SHAPE, MOBILENET_INPUT_SH
 from dataset import Dataset
 import numpy as np
 import wandb
-from wandb.keras import WandbCallback, WandbMetricsLogger, WandbModelCheckpoint
+from wandb.keras import WandbCallback, WandbModelCheckpoint
 import tensorflow as tf
 import pandas as pd
 from model import build_densenet121_model, build_efficientnet_model, build_mobilenetv2_model, build_nasnetmobile_model
