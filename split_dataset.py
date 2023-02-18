@@ -2,7 +2,7 @@ import tensorflow as tf
 from config import INPUT_WIDTH, MIN_INPUT_HEIGHT, RANDOM_SEED
 from dataset import PipelineDict, build_augmentation_pipeline, build_normalization_pipeline, generate_test_dataset, generate_train_dataset
 from preprocessing import filter_dataframe_by_video_ids, preprocess_dataframe
-from skeleton_graph import tssi_v2
+from skeleton_graph import tssi_legacy, tssi_v2, tssi_v3
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
 import pandas as pd
@@ -10,9 +10,14 @@ from sklearn.model_selection import StratifiedKFold
 
 
 class SplitDataset():
-    def __init__(self, train_dataframe, validation_dataframe, num_splits=None):
-        # retrieve the joints order
-        graph, joints_order = tssi_v2()
+    def __init__(self, train_dataframe, validation_dataframe, num_splits=None, tssi="v2"):
+        # retrieve the joints and the joints order
+        if tssi == "legacy":
+            graph, joints_order = tssi_legacy()
+        elif tssi == "v3":
+            graph, joints_order = tssi_v3()
+        else:
+            graph, joints_order = tssi_v2()
         columns = [joint + "_x" for joint in graph.nodes]
         columns += [joint + "_y" for joint in graph.nodes]
 

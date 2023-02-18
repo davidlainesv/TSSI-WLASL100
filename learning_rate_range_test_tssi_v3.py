@@ -12,7 +12,7 @@ from split_dataset import SplitDataset
 # Load data
 train_dataframe = pd.read_csv("wlasl100_skeletons_train.csv", index_col=0)
 validation_dataframe = pd.read_csv("wlasl100_skeletons_val.csv", index_col=0)
-dataset = SplitDataset(train_dataframe, validation_dataframe, num_splits=5)
+dataset = SplitDataset(train_dataframe, validation_dataframe, num_splits=5, tssi="v3")
 del train_dataframe, validation_dataframe
 
 

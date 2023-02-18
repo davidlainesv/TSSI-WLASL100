@@ -540,3 +540,117 @@ def tssi_v2(debug=False):
         print(info)
 
     return graph, tree_path
+
+
+def tssi_v3(debug=False):
+    BODY_JOINTS = [
+        PoseLandmark.RIGHT_SHOULDER.value,
+        PoseLandmark.RIGHT_ELBOW.value,
+        PoseLandmark.LEFT_SHOULDER.value,
+        PoseLandmark.LEFT_ELBOW.value
+    ]
+    HAND_JOINTS = [
+        HandLandmark.WRIST.value,
+        HandLandmark.THUMB_CMC.value,
+        HandLandmark.THUMB_MCP.value,
+        HandLandmark.THUMB_IP.value,
+        HandLandmark.THUMB_TIP.value,
+        HandLandmark.INDEX_FINGER_MCP.value,
+        HandLandmark.INDEX_FINGER_PIP.value,
+        HandLandmark.INDEX_FINGER_DIP.value,
+        HandLandmark.INDEX_FINGER_TIP.value,
+        HandLandmark.MIDDLE_FINGER_MCP.value,
+        HandLandmark.MIDDLE_FINGER_PIP.value,
+        HandLandmark.MIDDLE_FINGER_DIP.value,
+        HandLandmark.MIDDLE_FINGER_TIP.value,
+        HandLandmark.RING_FINGER_MCP.value,
+        HandLandmark.RING_FINGER_PIP.value,
+        HandLandmark.RING_FINGER_DIP.value,
+        HandLandmark.RING_FINGER_TIP.value,
+        HandLandmark.PINKY_MCP.value,
+        HandLandmark.PINKY_PIP.value,
+        HandLandmark.PINKY_DIP.value,
+        HandLandmark.PINKY_TIP.value
+    ]
+
+    FILTERED_POSE_CONNECTIONS = [(u, v) for (
+        u, v) in POSE_CONNECTIONS if u in BODY_JOINTS and v in BODY_JOINTS]
+
+    joints = ['root', 'pose_0'] + prefix(
+        'pose', BODY_JOINTS) + prefix('rightHand', HAND_JOINTS) + prefix('leftHand', HAND_JOINTS)
+
+    # Define graph
+    graph = Graph(joints)
+
+    for connection in HAND_CONNECTIONS:
+        start_id, end_id = connection
+        start = "leftHand_" + str(start_id)
+        end = "leftHand_" + str(end_id)
+        graph.add_edge(start, end)
+
+    for connection in HAND_CONNECTIONS:
+        start_id, end_id = connection
+        start = "rightHand_" + str(start_id)
+        end = "rightHand_" + str(end_id)
+        graph.add_edge(start, end)
+
+    for connection in FILTERED_POSE_CONNECTIONS:
+        start_id, end_id = connection
+        start = "pose_" + str(start_id)
+        end = "pose_" + str(end_id)
+        graph.add_edge(start, end)
+
+    # ADD the connection between the left elbow and the left wrist
+    graph.add_edge(
+        "pose_" + str(PoseLandmark.LEFT_ELBOW.value),
+        "leftHand_" + str(HandLandmark.WRIST.value))
+
+    # ADD the connection between the right elbow and the right wrist
+    graph.add_edge(
+        "pose_" + str(PoseLandmark.RIGHT_ELBOW.value),
+        "rightHand_" + str(HandLandmark.WRIST.value))
+
+    # ADD the connection between the ROOT and the nose
+    graph.add_edge(
+        "root",
+        "pose_" + str(PoseLandmark.NOSE.value))
+
+    # ADD the connection between the ROOT and the left shoulder
+    graph.add_edge(
+        "root",
+        "pose_" + str(PoseLandmark.RIGHT_SHOULDER.value))
+
+    # ADD the connection between the ROOT and the right shoulder
+    graph.add_edge(
+        "root",
+        "pose_" + str(PoseLandmark.LEFT_SHOULDER.value))
+
+    # REMOVE the connection between the left shoulder and the right shoulder
+    graph.remove_edge(
+        "pose_" + str(PoseLandmark.LEFT_SHOULDER.value),
+        "pose_" + str(PoseLandmark.RIGHT_SHOULDER.value))
+
+    # Perform DFS starting at the root
+    root_index = graph.nodes.index("root")
+    paths = graph.dfs_by_index(root_index)
+    tree_path = [graph.nodes[i] for path in paths[:1] for i in path]
+
+    # Debug info
+    info = [
+        ("ROOT:", tree_path.index("root")),
+        ("NOSE:", tree_path.index("pose_0")),
+        ("RIGHT SHOULDER:", tree_path.index(
+            "pose_" + str(PoseLandmark.RIGHT_SHOULDER.value))),
+        ("RIGHT WRIST:", tree_path.index(
+            "rightHand_" + str(HandLandmark.WRIST.value))),
+        ("LEFT SHOULDER:", tree_path.index(
+            "pose_" + str(int(PoseLandmark.LEFT_SHOULDER)))),
+        ("LEFT WRIST:", tree_path.index(
+            "leftHand_" + str(HandLandmark.WRIST.value))),
+    ]
+    info.sort(key=lambda x: x[1])
+
+    if debug:
+        print(info)
+
+    return graph, tree_path

@@ -2,7 +2,7 @@ import tensorflow as tf
 from config import INPUT_WIDTH, MAX_INPUT_HEIGHT, MIN_INPUT_HEIGHT
 from data_augmentation import RandomFlip, RandomScale, RandomShift, RandomRotation, RandomSpeed
 from preprocessing import Center, FillBlueWithAngle, PadIfLessThan, ResizeIfMoreThan, TranslationScaleInvariant, preprocess_dataframe
-from skeleton_graph import tssi_v2
+from skeleton_graph import tssi_legacy, tssi_v2, tssi_v3
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
 
@@ -23,8 +23,8 @@ NormalizationDict = {
     'pad': PadIfLessThan(frames=MIN_INPUT_HEIGHT),
     'angle': FillBlueWithAngle(x_channel=0, y_channel=1, scale_to=[0, 1]),
     'norm': tf.keras.layers.Normalization(axis=-1,
-            mean=[0.485, 0.456, 0.406],
-            variance=[0.052441, 0.050176, 0.050625])
+                                          mean=[0.485, 0.456, 0.406],
+                                          variance=[0.052441, 0.050176, 0.050625])
 }
 
 PipelineDict = {
@@ -34,7 +34,7 @@ PipelineDict = {
         'test_normalization': ['test_resize', 'pad']
     },
     'default_norm': {
-        #'augmentation': ['speed', 'rotation', 'flip', 'scale', 'shift'],
+        # 'augmentation': ['speed', 'rotation', 'flip', 'scale', 'shift'],
         'augmentation': ['speed', 'flip', 'scale'],
         'train_normalization': ['pad', 'norm'],
         'test_normalization': ['test_resize', 'pad', 'norm']
@@ -232,9 +232,14 @@ def build_normalization_pipeline(normalization):
 
 
 class Dataset():
-    def __init__(self, train_dataframe, validation_dataframe, test_dataframe=None):
+    def __init__(self, train_dataframe, validation_dataframe, test_dataframe=None, tssi="v2"):
         # retrieve the joints and the joints order
-        graph, joints_order = tssi_v2()
+        if tssi == "legacy":
+            graph, joints_order = tssi_legacy()
+        elif tssi == "v3":
+            graph, joints_order = tssi_v3()
+        else:
+            graph, joints_order = tssi_v2()
         columns = [joint + "_x" for joint in graph.nodes]
         columns += [joint + "_y" for joint in graph.nodes]
 
