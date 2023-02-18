@@ -1,5 +1,5 @@
 import argparse
-from config import DENSENET_INPUT_SHAPE, GENERIC_INPUT_SHAPE, MOBILENET_INPUT_SHAPE, RANDOM_SEED
+from config import RANDOM_SEED
 from dataset import Dataset
 import numpy as np
 import wandb
@@ -60,18 +60,19 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
                                     weight_decay=config['weight_decay'])
 
     # setup model
+    input_shape = [None, dataset.input_width, 3]
     if config['backbone'] == "densenet":
-        model = build_densenet121_model(input_shape=DENSENET_INPUT_SHAPE,
+        model = build_densenet121_model(input_shape=input_shape,
                                         dropout=config['dropout'],
                                         optimizer=optimizer,
                                         pretraining=config['pretraining'])
     elif config['backbone'] == "mobilenet":
-        model = build_mobilenetv2_model(input_shape=MOBILENET_INPUT_SHAPE,
+        model = build_mobilenetv2_model(input_shape=input_shape,
                                         dropout=config['dropout'],
                                         optimizer=optimizer,
                                         pretraining=config['pretraining'])
     elif config['backbone'] == "efficientnet":
-        model = build_efficientnet_model(input_shape=GENERIC_INPUT_SHAPE,
+        model = build_efficientnet_model(input_shape=input_shape,
                                          dropout=config['dropout'],
                                          optimizer=optimizer,
                                          pretraining=config['pretraining'])

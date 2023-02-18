@@ -1,12 +1,12 @@
 import argparse
-from config import DENSENET_INPUT_SHAPE, GENERIC_INPUT_SHAPE, LRRT_LOSS_MIN_DELTA, LRRT_STOP_FACTOR, MOBILENET_INPUT_SHAPE, NASNET_INPUT_SHAPE, RANDOM_SEED
+from config import LRRT_STOP_FACTOR, RANDOM_SEED
 from callbacks import LearningRateVsLossCallback
 from dataset import Dataset
 import numpy as np
 import wandb
 import tensorflow as tf
 import pandas as pd
-from model import build_densenet121_model, build_efficientnet_model, build_mobilenetv2_model, build_nasnetmobile_model
+from model import build_densenet121_model, build_efficientnet_model, build_mobilenetv2_model
 from optimizer import build_sgd_optimizer
 
 # Load data
@@ -52,23 +52,19 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
                                     weight_decay=config['weight_decay'])
 
     # setup model
+    input_shape = [None, dataset.input_width, 3]
     if config['backbone'] == "densenet":
-        model = build_densenet121_model(input_shape=DENSENET_INPUT_SHAPE,
+        model = build_densenet121_model(input_shape=input_shape,
                                         dropout=config['dropout'],
                                         optimizer=optimizer,
                                         pretraining=config['pretraining'])
     elif config['backbone'] == "mobilenet":
-        model = build_mobilenetv2_model(input_shape=MOBILENET_INPUT_SHAPE,
+        model = build_mobilenetv2_model(input_shape=input_shape,
                                         dropout=config['dropout'],
                                         optimizer=optimizer,
                                         pretraining=config['pretraining'])
-    elif config['backbone'] == 'nasnet':
-        model = build_nasnetmobile_model(input_shape=NASNET_INPUT_SHAPE,
-                                         dropout=config['dropout'],
-                                         optimizer=optimizer,
-                                         pretraining=config['pretraining'])
     elif config['backbone'] == "efficientnet":
-        model = build_efficientnet_model(input_shape=GENERIC_INPUT_SHAPE,
+        model = build_efficientnet_model(input_shape=input_shape,
                                          dropout=config['dropout'],
                                          optimizer=optimizer,
                                          pretraining=config['pretraining'])

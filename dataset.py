@@ -1,5 +1,5 @@
 import tensorflow as tf
-from config import INPUT_WIDTH, MAX_INPUT_HEIGHT, MIN_INPUT_HEIGHT
+from config import MAX_INPUT_HEIGHT, MIN_INPUT_HEIGHT
 from data_augmentation import RandomFlip, RandomScale, RandomShift, RandomRotation, RandomSpeed
 from preprocessing import Center, FillBlueWithAngle, PadIfLessThan, ResizeIfMoreThan, TranslationScaleInvariant, preprocess_dataframe
 from skeleton_graph import tssi_legacy, tssi_v2, tssi_v3
@@ -269,6 +269,7 @@ class Dataset():
         self.num_val_examples = num_val_examples
         self.num_test_examples = num_test_examples
         self.num_total_examples = num_total_examples
+        self.input_width = int(len(joints_order))
 
     def get_training_set(self,
                          batch_size=32,
@@ -291,7 +292,7 @@ class Dataset():
             batch = tf.expand_dims(x, axis=0)
             batch = augmentation_pipeline(batch, training=True)
             batch = normalization_pipeline(batch, training=True)
-            x = tf.ensure_shape(batch[0], [MIN_INPUT_HEIGHT, INPUT_WIDTH, 3])
+            x = tf.ensure_shape(batch[0], [MIN_INPUT_HEIGHT, self.input_width, 3])
             return x, y
 
         dataset = generate_train_dataset(self.train_dataframe,

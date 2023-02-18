@@ -1,5 +1,5 @@
 import tensorflow as tf
-from config import INPUT_WIDTH, MIN_INPUT_HEIGHT, RANDOM_SEED
+from config import MIN_INPUT_HEIGHT, RANDOM_SEED
 from dataset import PipelineDict, build_augmentation_pipeline, build_normalization_pipeline, generate_test_dataset, generate_train_dataset
 from preprocessing import filter_dataframe_by_video_ids, preprocess_dataframe
 from skeleton_graph import tssi_legacy, tssi_v2, tssi_v3
@@ -52,6 +52,7 @@ class SplitDataset():
         self.num_val_examples = num_val_examples
         self.num_total_examples = num_total_examples
         self.splits = splits
+        self.input_width = int(len(joints_order))
 
     def get_training_set(self,
                          split=1,
@@ -83,7 +84,7 @@ class SplitDataset():
             batch = tf.expand_dims(x, axis=0)
             batch = augmentation_pipeline(batch, training=True)
             batch = normalization_pipeline(batch, training=True)
-            x = tf.ensure_shape(batch[0], [MIN_INPUT_HEIGHT, INPUT_WIDTH, 3])
+            x = tf.ensure_shape(batch[0], [MIN_INPUT_HEIGHT, self.input_width, 3])
             return x, y
 
         dataset = generate_train_dataset(train_dataframe,
