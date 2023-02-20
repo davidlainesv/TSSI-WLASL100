@@ -162,7 +162,7 @@ if __name__ == "__main__":
                         default='densenet')
     parser.add_argument('--pretraining', type=str2bool,
                         help='Add pretraining', default=True)
-    parser.add_argument('--augmentation', type=bool,
+    parser.add_argument('--augmentation', type=str2bool,
                         help='Add augmentation', default=False)
     parser.add_argument('--lr_min', type=float,
                         help='Minimum learning rate', default=0.0001)

@@ -8,6 +8,7 @@ import tensorflow as tf
 import pandas as pd
 from model import build_densenet121_model, build_efficientnet_model, build_mobilenetv2_model
 from optimizer import build_sgd_optimizer
+from utils import str2bool
 
 dataset = None
 
@@ -176,9 +177,9 @@ if __name__ == "__main__":
                         help='Backbone method: \'densenet\', \'mobilenet\'',
                         default='densenet')
     parser.add_argument('--pretraining', type=bool,
-                        help='Add pretraining', default=True)
+                        help='Add pretraining', default=str2bool)
     parser.add_argument('--augmentation', type=bool,
-                        help='Add augmentation', default=False)
+                        help='Add augmentation', default=str2bool)
     parser.add_argument('--lr_min', type=float,
                         help='Minimum learning rate', default=0.0001)
     parser.add_argument('--lr_max', type=float,
