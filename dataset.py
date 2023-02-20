@@ -29,7 +29,7 @@ NormalizationDict = {
 
 PipelineDict = {
     'default': {
-        'augmentation': ['speed', 'rotation', 'flip', 'scale', 'shift'],
+        'augmentation': ['speed', 'flip', 'scale'],
         'train_normalization': ['pad'],
         'test_normalization': ['test_resize', 'pad']
     },
