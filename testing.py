@@ -9,30 +9,23 @@ import pandas as pd
 from model import build_densenet121_model, build_efficientnet_model, build_mobilenetv2_model
 from optimizer import build_sgd_optimizer
 
-# Load data
-train_dataframe = pd.read_csv("wlasl100_skeletons_train.csv", index_col=0)
-validation_dataframe = pd.read_csv("wlasl100_skeletons_val.csv", index_col=0)
-test_dataframe = pd.read_csv("wlasl100_skeletons_test.csv", index_col=0)
-
-
-validation_dataframe["video"] = validation_dataframe["video"] + \
-    train_dataframe["video"].max() + 1
-train_and_validation_dataframe = pd.concat(
-    [train_dataframe, validation_dataframe], axis=0, ignore_index=True)
-
-dataset = Dataset(train_and_validation_dataframe, test_dataframe)
-del train_dataframe, validation_dataframe, test_dataframe
+dataset = None
 
 
 def run_experiment(config=None, log_to_wandb=True, verbose=0):
+    global dataset
+
     tf.keras.backend.clear_session()
     tf.keras.utils.set_random_seed(RANDOM_SEED)
 
     # check if config was provided
     if config is None:
-        print("Not config provided.")
-        return
+        raise Exception("Not config provided.")
     print("[INFO] Configuration:", config, "\n")
+
+    # check if dataset was provided
+    if dataset is None:
+        raise Exception("Dataset not provided.")
 
     # generate train dataset
     train_dataset = dataset.get_training_set(
@@ -79,6 +72,8 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     else:
         raise Exception("Unknown model name")
 
+    print("[INFO] Input Shape:", input_shape)
+
     # setup callbacks
     callbacks = []
     if log_to_wandb:
@@ -114,6 +109,8 @@ def agent_fn(config, project, entity, verbose=0):
 
 
 def main(args):
+    global dataset
+
     entity = args.entity
     project = args.project
     lr_min = args.lr_min
@@ -127,6 +124,20 @@ def main(args):
     num_epochs = args.num_epochs
     pipeline = args.pipeline
     save_freq = args.save_freq
+    skeleton = args.skeleton
+
+    train_dataframe = pd.read_csv(
+        "wlasl100_skeletons_train.csv", index_col=0)
+    validation_dataframe = pd.read_csv(
+        "wlasl100_skeletons_val.csv", index_col=0)
+    test_dataframe = pd.read_csv(
+        "wlasl100_skeletons_test.csv", index_col=0)
+    validation_dataframe["video"] = validation_dataframe["video"] + \
+        train_dataframe["video"].max() + 1
+    train_and_validation_dataframe = pd.concat(
+        [train_dataframe, validation_dataframe], axis=0, ignore_index=True)
+    dataset = Dataset(train_and_validation_dataframe,
+                      test_dataframe, tssi=skeleton)
 
     steps_per_epoch = np.ceil(dataset.num_train_examples / batch_size)
 
@@ -147,7 +158,8 @@ def main(args):
         'batch_size': batch_size,
         'pipeline': pipeline,
 
-        'save_freq': int(steps_per_epoch * save_freq)
+        'save_freq': int(steps_per_epoch * save_freq),
+        'skeleton': skeleton
     }
 
     agent_fn(config=config, project=project, entity=entity, verbose=2)
@@ -182,6 +194,8 @@ if __name__ == "__main__":
                         help='Pipeline', default="default")
     parser.add_argument('--save_freq', type=int,
                         help='Save weights at epoch', default=100)
+    parser.add_argument('--skeleton', type=str,
+                        help='Skeleton Graph', default="v2")
     args = parser.parse_args()
 
     print(args)
