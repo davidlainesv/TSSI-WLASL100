@@ -24,7 +24,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
         raise Exception("Not config provided.")
     print("[INFO] Configuration:", config, "\n")
 
-    # check if dataset is not None
+    # check if dataset was provided
     if dataset is None:
         raise Exception("Dataset not provided.")
 
