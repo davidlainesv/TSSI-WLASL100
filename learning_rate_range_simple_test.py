@@ -32,6 +32,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
         buffer_size=dataset.num_train_examples,
         repeat=True,
         deterministic=True,
+        augmentation=config['augmentation'],
         pipeline=config['pipeline'])
 
     # generate val dataset
