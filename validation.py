@@ -73,6 +73,8 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     else:
         raise Exception("Unknown model name")
 
+    print("[INFO] Input Shape:", dataset.input_shape)
+
     # setup callbacks
     callbacks = []
     if log_to_wandb:
