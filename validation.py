@@ -10,22 +10,23 @@ from model import build_densenet121_model, build_efficientnet_model, build_mobil
 from optimizer import build_sgd_optimizer
 from utils import str2bool
 
-# Load data
-train_dataframe = pd.read_csv("wlasl100_skeletons_train.csv", index_col=0)
-validation_dataframe = pd.read_csv("wlasl100_skeletons_val.csv", index_col=0)
-dataset = Dataset(train_dataframe, validation_dataframe)
-del train_dataframe, validation_dataframe
+dataset = None
 
 
 def run_experiment(config=None, log_to_wandb=True, verbose=0):
+    global dataset
+
     tf.keras.backend.clear_session()
     tf.keras.utils.set_random_seed(RANDOM_SEED)
 
     # check if config was provided
     if config is None:
-        print("Not config provided.")
-        return
+        raise Exception("Not config provided.")
     print("[INFO] Configuration:", config, "\n")
+
+    # check if dataset is not None
+    if dataset is None:
+        raise Exception("Dataset not provided.")
 
     # generate train dataset
     train_dataset = dataset.get_training_set(
@@ -100,6 +101,8 @@ def agent_fn(config, project, entity, verbose=0):
 
 
 def main(args):
+    global dataset
+
     entity = args.entity
     project = args.project
     lr_min = args.lr_min
@@ -112,6 +115,13 @@ def main(args):
     batch_size = args.batch_size
     num_epochs = args.num_epochs
     pipeline = args.pipeline
+    skeleton = args.skeleton
+
+    train_dataframe = pd.read_csv(
+        "wlasl100_skeletons_train.csv", index_col=0)
+    validation_dataframe = pd.read_csv(
+        "wlasl100_skeletons_val.csv", index_col=0)
+    dataset = Dataset(train_dataframe, validation_dataframe, tssi=skeleton)
 
     steps_per_epoch = np.ceil(dataset.num_train_examples / batch_size)
 
@@ -163,6 +173,8 @@ if __name__ == "__main__":
                         help='Number of epochs', default=100)
     parser.add_argument('--pipeline', type=str,
                         help='Pipeline', default="default")
+    parser.add_argument('--skeleton', type=str,
+                        help='Skeleton Graph', default="v2")
     args = parser.parse_args()
 
     print(args)
