@@ -73,7 +73,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
     else:
         raise Exception("Unknown model name")
 
-    print("[INFO] Input Shape:", dataset.input_shape)
+    print("[INFO] Input Shape:", input_shape)
 
     # setup callbacks
     callbacks = []
@@ -143,7 +143,7 @@ def main(args):
         'augmentation': augmentation,
         'batch_size': batch_size,
         'pipeline': pipeline,
-        
+
         'skeleton': skeleton
     }
 
