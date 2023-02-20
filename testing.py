@@ -176,10 +176,10 @@ if __name__ == "__main__":
     parser.add_argument('--backbone', type=str,
                         help='Backbone method: \'densenet\', \'mobilenet\'',
                         default='densenet')
-    parser.add_argument('--pretraining', type=bool,
-                        help='Add pretraining', default=str2bool)
-    parser.add_argument('--augmentation', type=bool,
-                        help='Add augmentation', default=str2bool)
+    parser.add_argument('--pretraining', type=str2bool,
+                        help='Add pretraining', default=True)
+    parser.add_argument('--augmentation', type=str2bool,
+                        help='Add augmentation', default=False)
     parser.add_argument('--lr_min', type=float,
                         help='Minimum learning rate', default=0.0001)
     parser.add_argument('--lr_max', type=float,
