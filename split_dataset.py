@@ -60,8 +60,7 @@ class SplitDataset():
                          buffer_size=5000,
                          repeat=False,
                          deterministic=False,
-                         augmentation=[],
-                         normalization=[],
+                         augmentation=True,
                          pipeline=None):
         # obtain train indices
         split_indices = self.splits[split-1]
@@ -69,10 +68,15 @@ class SplitDataset():
 
         # define pipeline
         if type(pipeline) is str:
-            augmentation = PipelineDict[pipeline]['augmentation']
-            normalization = PipelineDict[pipeline]['train_normalization']
-        augmentation_pipeline = build_augmentation_pipeline(augmentation)
-        normalization_pipeline = build_normalization_pipeline(normalization)
+            augmentation_layers = PipelineDict[pipeline]['augmentation'] \
+                if augmentation else []
+            normalization_layers = PipelineDict[pipeline]['train_normalization']
+        else:
+            raise Exception("Pipeline not provided")
+        augmentation_pipeline = build_augmentation_pipeline(
+            augmentation_layers)
+        normalization_pipeline = build_normalization_pipeline(
+            normalization_layers)
 
         # filter main dataframe using train_indices
         train_dataframe = filter_dataframe_by_video_ids(
@@ -101,7 +105,6 @@ class SplitDataset():
     def get_validation_set(self,
                            split=1,
                            batch_size=32,
-                           normalization=[],
                            pipeline=None):
         # obtain train indices
         split_indices = self.splits[split-1]
@@ -113,9 +116,11 @@ class SplitDataset():
 
         # define normalization pipeline
         if type(pipeline) is str:
-            normalization = PipelineDict[pipeline]['test_normalization']
+            normalization_layers = PipelineDict[pipeline]['test_normalization']
+        else:
+            raise Exception("Pipeline not provided")
         normalization_pipeline = build_normalization_pipeline(
-            normalization)
+            normalization_layers)
 
         # define the val map function
         @tf.function
