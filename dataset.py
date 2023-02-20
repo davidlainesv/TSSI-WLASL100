@@ -31,17 +31,33 @@ NormalizationDict = {
 PipelineDict = {
     'default': {
         'augmentation': ['speed', 'flip', 'scale'],
-        'train_normalization': ['pad'],
+        'train_normalization': ['train_resize', 'pad'],
         'test_normalization': ['test_resize', 'pad']
     },
+    'default_speed': {
+        'augmentation': ['speed'],
+        'train_normalization': ['train_resize', 'pad'],
+        'test_normalization': ['test_resize', 'pad']
+    },
+    'default_flip': {
+        'augmentation': ['flip'],
+        'train_normalization': ['train_resize', 'pad'],
+        'test_normalization': ['test_resize', 'pad']
+    },
+    'default_scale': {
+        'augmentation': ['scale'],
+        'train_normalization': ['train_resize', 'pad'],
+        'test_normalization': ['test_resize', 'pad']
+    },
+
     'default_norm': {
         'augmentation': ['speed', 'flip', 'scale'],
-        'train_normalization': ['pad', 'norm'],
+        'train_normalization': ['train_resize', 'pad', 'norm'],
         'test_normalization': ['test_resize', 'pad', 'norm']
     },
     'default_norm_speed': {
         'augmentation': ['speed'],
-        'train_normalization': ['pad', 'norm'],
+        'train_normalization': ['train_resize', 'pad', 'norm'],
         'test_normalization': ['test_resize', 'pad', 'norm']
     },
     'default_norm_flip': {
@@ -54,6 +70,7 @@ PipelineDict = {
         'train_normalization': ['train_resize', 'pad', 'norm'],
         'test_normalization': ['test_resize', 'pad', 'norm']
     },
+
     'invariant_frame': {
         'augmentation': ['speed', 'rotation', 'flip'],
         'train_normalization': ['invariant_frame', 'pad'],
@@ -291,15 +308,19 @@ class Dataset():
                          buffer_size=5000,
                          repeat=False,
                          deterministic=False,
-                         augmentation=[],
-                         normalization=[],
-                         pipeline=None):
+                         augmentation=True,
+                         pipeline="default"):
         # define pipeline
         if type(pipeline) is str:
-            augmentation = PipelineDict[pipeline]['augmentation']
-            normalization = PipelineDict[pipeline]['train_normalization']
-        augmentation_pipeline = build_augmentation_pipeline(augmentation)
-        normalization_pipeline = build_normalization_pipeline(normalization)
+            augmentation_layers = PipelineDict[pipeline]['augmentation'] \
+                if augmentation else []
+            normalization_layers = PipelineDict[pipeline]['train_normalization']
+        else:
+            raise Exception("Pipeline not provided")
+        augmentation_pipeline = build_augmentation_pipeline(
+            augmentation_layers)
+        normalization_pipeline = build_normalization_pipeline(
+            normalization_layers)
 
         # define the train map function
         @tf.function
@@ -307,7 +328,8 @@ class Dataset():
             batch = tf.expand_dims(x, axis=0)
             batch = augmentation_pipeline(batch, training=True)
             batch = normalization_pipeline(batch, training=True)
-            x = tf.ensure_shape(batch[0], [MIN_INPUT_HEIGHT, self.input_width, 3])
+            x = tf.ensure_shape(
+                batch[0], [MIN_INPUT_HEIGHT, self.input_width, 3])
             return x, y
 
         dataset = generate_train_dataset(self.train_dataframe,
@@ -323,13 +345,14 @@ class Dataset():
 
     def get_validation_set(self,
                            batch_size=32,
-                           normalization=[],
-                           pipeline=None):
+                           pipeline="default"):
         # define normalization pipeline
         if type(pipeline) is str:
-            normalization = PipelineDict[pipeline]['test_normalization']
+            normalization_layers = PipelineDict[pipeline]['test_normalization']
+        else:
+            raise Exception("Pipeline not provided")
         normalization_pipeline = build_normalization_pipeline(
-            normalization)
+            normalization_layers)
 
         # define the val map function
         @tf.function
