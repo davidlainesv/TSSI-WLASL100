@@ -27,6 +27,7 @@ NormalizationDict = {
                                           variance=[0.052441, 0.050176, 0.050625])
 }
 
+# default_augmentation_order = ['speed', 'rotation', 'flip', 'scale', 'shift']
 PipelineDict = {
     'default': {
         'augmentation': ['speed', 'flip', 'scale'],
@@ -34,9 +35,23 @@ PipelineDict = {
         'test_normalization': ['test_resize', 'pad']
     },
     'default_norm': {
-        # 'augmentation': ['speed', 'rotation', 'flip', 'scale', 'shift'],
         'augmentation': ['speed', 'flip', 'scale'],
         'train_normalization': ['pad', 'norm'],
+        'test_normalization': ['test_resize', 'pad', 'norm']
+    },
+    'default_norm_speed': {
+        'augmentation': ['speed'],
+        'train_normalization': ['pad', 'norm'],
+        'test_normalization': ['test_resize', 'pad', 'norm']
+    },
+    'default_norm_flip': {
+        'augmentation': ['flip'],
+        'train_normalization': ['train_resize', 'pad', 'norm'],
+        'test_normalization': ['test_resize', 'pad', 'norm']
+    },
+    'default_norm_scale': {
+        'augmentation': ['scale'],
+        'train_normalization': ['train_resize', 'pad', 'norm'],
         'test_normalization': ['test_resize', 'pad', 'norm']
     },
     'invariant_frame': {
