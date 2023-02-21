@@ -102,6 +102,12 @@ PipelineDict = {
         'test_normalization': ['test_resize', 'angle', 'pad']
     },
 
+    'default_angle_norm': {
+        'augmentation': ['speed', 'flip', 'scale'],
+        'train_normalization': ['train_resize', 'angle', 'pad', 'norm'],
+        'test_normalization': ['test_resize', 'angle', 'pad', 'norm']
+    },
+
     'default_center_norm': {
         'augmentation': ['speed', 'flip', 'scale'],
         'train_normalization': ['center', 'pad', 'norm'],
