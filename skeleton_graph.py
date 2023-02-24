@@ -654,3 +654,205 @@ def tssi_v3(debug=False):
         print(info)
 
     return graph, tree_path
+
+
+def tssi_mejiaperez(debug=False):
+    RIGHT_EYEBROW_JOINTS = [46, 52, 53, 65]
+    LEFT_EYEBROW_JOINTS = [276, 282, 283, 295]
+    RIGHT_EYE = [7, 159, 155, 145]
+    LEFT_EYE = [382, 386, 249, 374]
+    MOUTH = [324, 13, 78, 14]
+    BODY_JOINTS = [
+        PoseLandmark.RIGHT_SHOULDER.value,
+        PoseLandmark.RIGHT_ELBOW.value,
+        PoseLandmark.LEFT_SHOULDER.value,
+        PoseLandmark.LEFT_ELBOW.value
+    ]
+    HAND_JOINTS = [
+        HandLandmark.WRIST.value,
+        HandLandmark.THUMB_CMC.value,
+        HandLandmark.THUMB_MCP.value,
+        HandLandmark.THUMB_IP.value,
+        HandLandmark.THUMB_TIP.value,
+        HandLandmark.INDEX_FINGER_MCP.value,
+        HandLandmark.INDEX_FINGER_PIP.value,
+        HandLandmark.INDEX_FINGER_DIP.value,
+        HandLandmark.INDEX_FINGER_TIP.value,
+        HandLandmark.MIDDLE_FINGER_MCP.value,
+        HandLandmark.MIDDLE_FINGER_PIP.value,
+        HandLandmark.MIDDLE_FINGER_DIP.value,
+        HandLandmark.MIDDLE_FINGER_TIP.value,
+        HandLandmark.RING_FINGER_MCP.value,
+        HandLandmark.RING_FINGER_PIP.value,
+        HandLandmark.RING_FINGER_DIP.value,
+        HandLandmark.RING_FINGER_TIP.value,
+        HandLandmark.PINKY_MCP.value,
+        HandLandmark.PINKY_PIP.value,
+        HandLandmark.PINKY_DIP.value,
+        HandLandmark.PINKY_TIP.value
+    ]
+
+    FACE_JOINTS = RIGHT_EYEBROW_JOINTS + \
+        LEFT_EYEBROW_JOINTS + RIGHT_EYE + LEFT_EYE + MOUTH
+
+    FILTERED_FACEMESH_CONNECTIONS = [(u, v) for (
+        u, v) in FACEMESH_CONTOURS if u in FACE_JOINTS and v in FACE_JOINTS]
+    FILTERED_POSE_CONNECTIONS = [(u, v) for (
+        u, v) in POSE_CONNECTIONS if u in BODY_JOINTS and v in BODY_JOINTS]
+
+    joints = ['root'] + prefix('face', FACE_JOINTS) + prefix(
+        'pose', BODY_JOINTS) + prefix('rightHand', HAND_JOINTS) + prefix('leftHand', HAND_JOINTS)
+
+    # Define graph
+    graph = Graph(joints)
+
+    # Setup connections
+    for connection in FILTERED_FACEMESH_CONNECTIONS:
+        start_id, end_id = connection
+        start = "face_" + str(start_id)
+        end = "face_" + str(end_id)
+        graph.add_edge(start, end)
+
+    for connection in HAND_CONNECTIONS:
+        start_id, end_id = connection
+        start = "leftHand_" + str(start_id)
+        end = "leftHand_" + str(end_id)
+        graph.add_edge(start, end)
+
+    for connection in HAND_CONNECTIONS:
+        start_id, end_id = connection
+        start = "rightHand_" + str(start_id)
+        end = "rightHand_" + str(end_id)
+        graph.add_edge(start, end)
+
+    for connection in FILTERED_POSE_CONNECTIONS:
+        start_id, end_id = connection
+        start = "pose_" + str(start_id)
+        end = "pose_" + str(end_id)
+        graph.add_edge(start, end)
+
+    # ADD the connections in the left eye
+    graph.add_edge(
+        "face_" + str(155),
+        "face_" + str(159))
+    graph.add_edge(
+        "face_" + str(159),
+        "face_" + str(7))
+    graph.add_edge(
+        "face_" + str(7),
+        "face_" + str(145))
+    graph.add_edge(
+        "face_" + str(145),
+        "face_" + str(155))
+
+    # ADD the connections in the right eye
+    graph.add_edge(
+        "face_" + str(382),
+        "face_" + str(386))
+    graph.add_edge(
+        "face_" + str(386),
+        "face_" + str(249))
+    graph.add_edge(
+        "face_" + str(249),
+        "face_" + str(374))
+    graph.add_edge(
+        "face_" + str(374),
+        "face_" + str(382))
+
+    # ADD the connections in the mouth
+    graph.add_edge(
+        "face_" + str(13),
+        "face_" + str(78))
+    graph.add_edge(
+        "face_" + str(78),
+        "face_" + str(14))
+    graph.add_edge(
+        "face_" + str(14),
+        "face_" + str(324))
+    graph.add_edge(
+        "face_" + str(324),
+        "face_" + str(13))
+
+    # ADD the connection between the root and the left eyebrow
+    graph.add_edge(
+        "root",
+        "face_" + str(FaceLandmark.LEFT_LOWER_EYEBROW_INNER_SECOND.value))
+
+    # ADD the connection between the root and the right eyebrow
+    graph.add_edge(
+        "root",
+        "face_" + str(FaceLandmark.RIGHT_LOWER_EYEBROW_INNER_SECOND.value))
+
+    # ADD the connection between the root and the left eye
+    graph.add_edge(
+        "root",
+        "face_" + str(FaceLandmark.LEFT_EYE_INNER_SECOND.value))
+
+    # ADD the connection between the root and the right eye
+    graph.add_edge(
+        "root",
+        "face_" + str(FaceLandmark.RIGHT_EYE_INNER_SECOND.value))
+
+    # ADD the connection between the root and the mouth
+    graph.add_edge(
+        "root",
+        "face_" + str(FaceLandmark.LIPS_INNER.value))
+
+    # ADD the connection between the left elbow and the left wrist
+    graph.add_edge(
+        "pose_" + str(PoseLandmark.LEFT_ELBOW.value),
+        "leftHand_" + str(HandLandmark.WRIST.value))
+
+    # ADD the connection between the right elbow and the right wrist
+    graph.add_edge(
+        "pose_" + str(PoseLandmark.RIGHT_ELBOW.value),
+        "rightHand_" + str(HandLandmark.WRIST.value))
+
+    # ADD the connection between the ROOT and the left shoulder
+    graph.add_edge(
+        "root",
+        "pose_" + str(PoseLandmark.RIGHT_SHOULDER.value))
+
+    # ADD the connection between the ROOT and the right shoulder
+    graph.add_edge(
+        "root",
+        "pose_" + str(PoseLandmark.LEFT_SHOULDER.value))
+
+    # REMOVE the connection between the left shoulder and the right shoulder
+    graph.remove_edge(
+        "pose_" + str(PoseLandmark.LEFT_SHOULDER.value),
+        "pose_" + str(PoseLandmark.RIGHT_SHOULDER.value))
+
+    # Perform DFS starting at the root
+    root_index = graph.nodes.index("root")
+    paths = graph.dfs_by_index(root_index)
+    tree_path = [graph.nodes[i] for path in paths[:1] for i in path]
+
+    # Debug info
+    info = [
+        ("ROOT:", tree_path.index("root")),
+        ("RIGHT EYEBROW:", tree_path.index("face_" +
+         str(FaceLandmark.RIGHT_LOWER_EYEBROW_INNER_SECOND.value))),
+        ("LEFT EYEBROW:", tree_path.index("face_" +
+         str(FaceLandmark.LEFT_LOWER_EYEBROW_INNER_SECOND.value))),
+        ("RIGHT EYE INNER:", tree_path.index(
+            "face_" + str(FaceLandmark.RIGHT_EYE_INNER_SECOND.value))),
+        ("LEFT EYE INNER:", tree_path.index(
+            "face_" + str(FaceLandmark.LEFT_EYE_INNER_SECOND.value))),
+        ("MOUTH (INNER LIPS):", tree_path.index(
+            "face_" + str(FaceLandmark.LIPS_INNER.value))),
+        ("RIGHT SHOULDER:", tree_path.index(
+            "pose_" + str(PoseLandmark.RIGHT_SHOULDER.value))),
+        ("RIGHT WRIST:", tree_path.index(
+            "rightHand_" + str(HandLandmark.WRIST.value))),
+        ("LEFT SHOULDER:", tree_path.index(
+            "pose_" + str(int(PoseLandmark.LEFT_SHOULDER)))),
+        ("LEFT WRIST:", tree_path.index(
+            "leftHand_" + str(HandLandmark.WRIST.value))),
+    ]
+    info.sort(key=lambda x: x[1])
+
+    if debug:
+        print(info)
+
+    return graph, tree_path
