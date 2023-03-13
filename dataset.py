@@ -7,7 +7,7 @@ from sklearn.preprocessing import OneHotEncoder
 import numpy as np
 
 AugmentationDict = {
-    'speed': RandomSpeed(min_frames=60, max_frames=MIN_INPUT_HEIGHT, seed=5),
+    'speed': RandomSpeed(min_frames=48, max_frames=74, seed=5),
     'rotation': RandomRotation(factor=15.0, min_value=0.0, max_value=1.0, seed=4),
     'flip': RandomFlip("horizontal", min_value=0.0, max_value=1.0, seed=3),
     'scale': RandomScale(min_value=0.0, max_value=1.0, seed=1),
