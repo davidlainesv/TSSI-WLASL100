@@ -335,7 +335,7 @@ class Dataset():
             batch = tf.expand_dims(x, axis=0)
             # batch = augmentation_pipeline(batch, training=True)
             batch = RemoveZ()(batch)
-            batch = normalization_pipeline(batch, training=True)
+            batch = normalization_pipeline(batch)
             x = tf.ensure_shape(
                 batch[0], [MIN_INPUT_HEIGHT, self.input_width, 2])
             return x, y
