@@ -117,7 +117,6 @@ def main(args):
     batch_size = args.batch_size
     num_epochs = args.num_epochs
     pipeline = args.pipeline
-    skeleton = args.skeleton
     use_loss = args.use_loss
     use_attention = args.use_attention
     growth_rate = args.growth_rate
@@ -127,7 +126,7 @@ def main(args):
         "wlasl100_skeletons_train.csv", index_col=0)
     validation_dataframe = pd.read_csv(
         "wlasl100_skeletons_val.csv", index_col=0)
-    dataset = Dataset(train_dataframe, validation_dataframe, tssi=skeleton)
+    dataset = Dataset(train_dataframe, validation_dataframe, tssi="v2")
 
     steps_per_epoch = np.ceil(dataset.num_train_examples / batch_size)
 
