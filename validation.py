@@ -193,6 +193,9 @@ if __name__ == "__main__":
                         help='Loss function', default="crossentropy")
     parser.add_argument('--densenet_depth', type=int,
                         help='DenseNet depth', default=121)
+    parser.add_argument('--optimizer', type=str,
+                        help='Optimizer: \'sgd\', \'adam\'', default='sgd')
+    
 
     args = parser.parse_args()
 
