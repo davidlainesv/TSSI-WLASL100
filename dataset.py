@@ -1,7 +1,7 @@
 import tensorflow as tf
 from config import MAX_INPUT_HEIGHT, MIN_INPUT_HEIGHT
 from data_augmentation import RandomFlip, RandomScale, RandomShift, RandomRotation, RandomSpeed
-from preprocessing import Center, FillBlueWithAngle, PadIfLessThan, ResizeIfMoreThan, TranslationScaleInvariant
+from preprocessing import Center, FillBlueWithAngle, PadIfLessThan, RemoveZ, ResizeIfMoreThan, TranslationScaleInvariant
 from skeleton_graph import tssi_legacy, tssi_v2, tssi_v3
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
@@ -333,10 +333,11 @@ class Dataset():
         @tf.function
         def train_map_fn(x, y):
             batch = tf.expand_dims(x, axis=0)
-            batch = augmentation_pipeline(batch, training=True)
+            # batch = augmentation_pipeline(batch, training=True)
+            batch = RemoveZ(batch)
             batch = normalization_pipeline(batch, training=True)
             x = tf.ensure_shape(
-                batch[0], [MIN_INPUT_HEIGHT, self.input_width, 3])
+                batch[0], [MIN_INPUT_HEIGHT, self.input_width, 2])
             return x, y
 
         dataset = generate_train_dataset(self.train_dataframe,
@@ -365,6 +366,7 @@ class Dataset():
         @tf.function
         def test_map_fn(batch_x, batch_y):
             batch_x = batch_x.to_tensor()
+            batch_x = RemoveZ(batch_x)
             batch_x = normalization_pipeline(batch_x)
             return batch_x, batch_y
 
@@ -392,6 +394,7 @@ class Dataset():
         @tf.function
         def test_map_fn(batch_x, batch_y):
             batch_x = batch_x.to_tensor()
+            batch_x = RemoveZ(batch_x)
             batch_x = normalization_pipeline(batch_x)
             return batch_x, batch_y
 

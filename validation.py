@@ -55,7 +55,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
                                     weight_decay=config['weight_decay'])
 
     # setup model
-    input_shape = [None, dataset.input_width, 3]
+    input_shape = [None, dataset.input_width, 2]
     if config['backbone'] == "densenet":
         model = build_densenet121_model(input_shape=input_shape,
                                         dropout=config['dropout'],
