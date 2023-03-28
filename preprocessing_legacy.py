@@ -1,23 +1,132 @@
 import math
 import tensorflow as tf
+import numpy as np
 from mediapipe.python.solutions.pose import PoseLandmark
 
 
-RANGE_DICT = {
-    'face': range(0, 468),
-    'leftHand': range(468, 468+21),
-    'pose': range(468+21, 468+21+33),
-    'rightHand': range(468+21+33, 468+21+33+21),
-    'root': range(468+21+33+21, 468+21+33+21+1)
-}
+def replace_nan_with_other_column(
+        dataframe, source_columns, target_column):
+    # array of dataframe at source_columns
+    arr = dataframe[source_columns].to_numpy()
+    # array of dataframe at target_column
+    values = dataframe[target_column].to_numpy()
+    # indices where arr is nan
+    indices = np.where(np.isnan(arr))
+    # replace nan's of arr with values
+    for i in range(indices[0].shape[0]):
+        row = indices[0][i]
+        column = indices[1][i]
+        arr[row][column] = values[row]
+    # return modified arr
+    return arr
 
-SLICE_DICT = {
-    'face': slice(0, 468),
-    'leftHand': slice(468, 468+21),
-    'pose': slice(468+21, 468+21+33),
-    'rightHand': slice(468+21+33, 468+21+33+21),
-    'root': slice(468+21+33+21, 468+21+33+21+1)
-}
+
+def preprocess_dataframe(dataframe, select_columns=[], with_root=True, with_midhip=False):
+    dataframe = dataframe.copy()
+
+    # obtain x, y columns
+    x_columns = dataframe.columns[3::2]
+    y_columns = dataframe.columns[4::2]
+
+    # columns that could have nan values
+    x_left_hand_columns = [col for col in x_columns if "leftHand" in col]
+    y_left_hand_columns = [col for col in y_columns if "leftHand" in col]
+    x_right_hand_columns = [col for col in x_columns if "rightHand" in col]
+    y_right_hand_columns = [col for col in y_columns if "rightHand" in col]
+    x_face_columns = [col for col in x_columns if "face" in col]
+    y_face_columns = [col for col in y_columns if "face" in col]
+
+    # columns with non-nan values
+    x_left_wrist_column = 'pose_' + str(int(PoseLandmark.LEFT_WRIST)) + '_x'
+    y_left_wrist_column = 'pose_' + str(int(PoseLandmark.LEFT_WRIST)) + '_y'
+    x_right_wrist_column = 'pose_' + str(int(PoseLandmark.RIGHT_WRIST)) + '_x'
+    y_right_wrist_column = 'pose_' + str(int(PoseLandmark.RIGHT_WRIST)) + '_y'
+    x_nose_column = "pose_" + str(int(PoseLandmark.NOSE)) + "_x"
+    y_nose_column = "pose_" + str(int(PoseLandmark.NOSE)) + "_y"
+
+    # add root column
+    if with_root:
+        dataframe['root_x'] = (dataframe['pose_' + str(int(PoseLandmark.LEFT_SHOULDER)) + '_x'] +
+                               dataframe['pose_' + str(int(PoseLandmark.RIGHT_SHOULDER)) + '_x']) / 2.
+        dataframe['root_y'] = (dataframe['pose_' + str(int(PoseLandmark.LEFT_SHOULDER)) + '_y'] +
+                               dataframe['pose_' + str(int(PoseLandmark.RIGHT_SHOULDER)) + '_y']) / 2.
+
+    # add midhip column
+    if with_midhip:
+        dataframe['midhip_x'] = (dataframe['pose_' + str(int(PoseLandmark.LEFT_HIP)) + '_x'] +
+                                 dataframe['pose_' + str(int(PoseLandmark.RIGHT_HIP)) + '_x']) / 2.
+        dataframe['midhip_y'] = (dataframe['pose_' + str(int(PoseLandmark.LEFT_HIP)) + '_y'] +
+                                 dataframe['pose_' + str(int(PoseLandmark.RIGHT_HIP)) + '_y']) / 2.
+
+    # # replace left hand columns with the left wrist coordinates
+    dataframe.loc[:, x_left_hand_columns] = replace_nan_with_other_column(
+        dataframe, x_left_hand_columns, x_left_wrist_column)
+    dataframe.loc[:, y_left_hand_columns] = replace_nan_with_other_column(
+        dataframe, y_left_hand_columns, y_left_wrist_column)
+
+    # # Replace right hand columns with the right wrist coordinates
+    dataframe.loc[:, x_right_hand_columns] = replace_nan_with_other_column(
+        dataframe, x_right_hand_columns, x_right_wrist_column)
+    dataframe.loc[:, y_right_hand_columns] = replace_nan_with_other_column(
+        dataframe, y_right_hand_columns, y_right_wrist_column)
+
+    # # replace face columns with the nose coordinates
+    dataframe.loc[:, x_face_columns] = replace_nan_with_other_column(
+        dataframe, x_face_columns, x_nose_column)
+    dataframe.loc[:, y_face_columns] = replace_nan_with_other_column(
+        dataframe, y_face_columns, y_nose_column)
+
+    # filter columns
+    if len(select_columns) > 0:
+        base_columns = list(dataframe.columns[:3])
+        unique_columns = list(np.unique(select_columns))
+        dataframe = dataframe.loc[:, base_columns + unique_columns]
+
+    return dataframe
+
+
+def normalize_dataframe_legacy(dataframe):
+    dataframe = dataframe.copy()
+    x_columns = dataframe.columns[3::2]
+    y_columns = dataframe.columns[4::2]
+    xy_columns = dataframe.columns[3:]
+
+    # Move in the x-axis
+    x_smaller_than_0_mask = np.any(
+        dataframe[x_columns] < 0, axis=1)
+    x_offset = dataframe.loc[x_smaller_than_0_mask, x_columns].min(
+        axis=1).abs().values[:, np.newaxis]
+    dataframe.loc[x_smaller_than_0_mask,
+                  x_columns] = dataframe.loc[x_smaller_than_0_mask, x_columns] + x_offset
+
+    # Move in the y-axis
+    y_smaller_than_0_mask = np.any(
+        dataframe[y_columns] < 0, axis=1)
+    y_offset = dataframe.loc[y_smaller_than_0_mask, y_columns].min(
+        axis=1).abs().values[:, np.newaxis]
+    dataframe.loc[y_smaller_than_0_mask,
+                  y_columns] = dataframe.loc[y_smaller_than_0_mask, y_columns] + y_offset
+
+    # Scale videos outside (0, 1) to (0, 1)
+    # out_of_scale_mask = np.any(selected_data > 1, axis=1)
+    # out_of_scale_data = selected_data[out_of_scale_mask]
+    # scales = out_of_scale_data.max(axis=1).to_numpy()[:, np.newaxis]
+    # selected_data.loc[out_of_scale_mask, :] = out_of_scale_data / scales
+
+    out_of_scale_mask = np.any(dataframe[xy_columns] > 1, axis=1)
+    abs_grouped = dataframe.loc[out_of_scale_mask, :].abs().groupby("video")
+    repetitions = abs_grouped.size().to_numpy()
+    max_per_video = abs_grouped[xy_columns].max().max(axis=1).to_numpy()
+    max_per_video_repeated = max_per_video.repeat(repetitions)[:, None]
+    dataframe.loc[out_of_scale_mask, xy_columns] = \
+        dataframe.loc[out_of_scale_mask, xy_columns] / max_per_video_repeated
+
+    return dataframe
+
+
+def filter_dataframe_by_video_ids(dataframe, video_ids):
+    mask = dataframe["video"].isin(video_ids)
+    return dataframe.loc[mask, :]
 
 
 class PadIfLessThan(tf.keras.layers.Layer):
@@ -28,6 +137,7 @@ class PadIfLessThan(tf.keras.layers.Layer):
     @tf.function
     def call(self, images):
         height = tf.shape(images)[1]
+        width = tf.shape(images)[2]
         height_pad = tf.math.maximum(0, self.frames - height)
         paddings = [[0, 0], [0, height_pad], [0, 0], [0, 0]]
         padded_images = tf.pad(images, paddings, "CONSTANT")
@@ -72,34 +182,6 @@ class Center(tf.keras.layers.Layer):
         new_green = green - green_around_joint
 
         return tf.stack([new_red, new_green, blue], axis=-1)
-
-
-class CenterAtFirstFrame2D(tf.keras.layers.Layer):
-    def __init__(self, around_index=0, **kwargs):
-        super().__init__(**kwargs)
-        self.around_index = around_index
-
-    @tf.function
-    def call(self, batch):
-        # batch.shape => (examples, frames, joints, coordinates)
-        # [color].shape => (examples, frames, joints)
-        red, green = tf.unstack(batch, axis=-1)
-
-        # [color]_around_joint.shape => (examples)
-        red_around_joint_at_0 = tf.expand_dims(
-            tf.expand_dims(
-                red[:, 0, self.around_index], axis=-1),
-            axis=-1)
-        green_around_joint_at_0 = tf.expand_dims(
-            tf.expand_dims(
-                green[:, 0, self.around_index], axis=-1),
-            axis=-1)
-
-        # new_[color].shape => (examples, frames, joints)
-        new_red = red - red_around_joint_at_0
-        new_green = green - green_around_joint_at_0
-
-        return tf.stack([new_red, new_green], axis=-1)
 
 
 class TranslationScaleInvariant(tf.keras.layers.Layer):
@@ -206,125 +288,10 @@ class FillBlueWithAngle(tf.keras.layers.Layer):
         batch = tf.cast(batch, tf.float32)
         unstacked = tf.unstack(batch, axis=-1)
         x, y = unstacked[self.x_channel], unstacked[self.y_channel]
-        angles = tf.math.multiply(tf.math.atan2(y, x), (180 / math.pi)) % 360
+        angles = tf.math.atan2(y, x) * (180 / math.pi) % 360
         data_min, data_max = 0, 359
         range_min, range_max = self.scale_to
         std = (angles - data_min) / (data_max - data_min)
         scaled = std * (range_max - range_min) + range_min
 
         return tf.stack([x, y, scaled], axis=-1)
-
-
-class FillZWithZeros(tf.keras.layers.Layer):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    @tf.function
-    def call(self, batch):
-        x, y, _ = tf.unstack(batch, axis=-1)
-        zeros = tf.zeros(tf.shape(x), dtype=x.dtype)
-        return tf.stack([x, y, zeros], axis=-1)
-
-
-class RemoveZ(tf.keras.layers.Layer):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    @tf.function
-    def call(self, batch):
-        x, y, _ = tf.unstack(batch, axis=-1)
-        return tf.stack([x, y], axis=-1)
-
-
-class AddRoot(tf.keras.layers.Layer):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.left_shoulder = RANGE_DICT["pose"][PoseLandmark.LEFT_SHOULDER]
-        self.right_shoulder = RANGE_DICT["pose"][PoseLandmark.RIGHT_SHOULDER]
-
-    @tf.function
-    def call(self, batch):
-        left = batch[:, :, self.left_shoulder, :]
-        right = batch[:, :, self.right_shoulder, :]
-        root = (left + right) / 2
-        root = tf.expand_dims(root, axis=2)
-        batch = tf.concat([batch, root], axis=2)
-        return batch
-
-
-class SortColumns(tf.keras.layers.Layer):
-    def __init__(self, tssi_order, **kwargs):
-        super().__init__(**kwargs)
-        joints_idxs = []
-        for joint in tssi_order:
-            joint_type = joint.split("_")[0]
-            if joint_type == "root":
-                landmark_id = 0
-            else:
-                landmark_id = int(joint.split("_")[1])
-            idx = RANGE_DICT[joint_type][landmark_id]
-            joints_idxs.append(idx)
-        self.joints_idxs = joints_idxs
-
-    @tf.function
-    def call(self, keypoints):
-        keypoints = tf.gather(keypoints, indices=self.joints_idxs, axis=2)
-        return keypoints
-
-
-class FillNaNValues(tf.keras.layers.Layer):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.nose_idx = RANGE_DICT["pose"][PoseLandmark.NOSE]
-        self.left_wrist_idx = RANGE_DICT["pose"][PoseLandmark.LEFT_WRIST]
-        self.right_wrist_idx = RANGE_DICT["pose"][PoseLandmark.RIGHT_WRIST]
-
-    @tf.function
-    def call(self, keypoints):
-        face = keypoints[:, :, SLICE_DICT["face"], :]
-        left_hand = keypoints[:, :, SLICE_DICT["leftHand"], :]
-        pose = keypoints[:, :, SLICE_DICT["pose"], :]
-        right_hand = keypoints[:, :, SLICE_DICT["rightHand"], :]
-
-        nose = keypoints[:, :, self.nose_idx, :]
-        nose = tf.expand_dims(nose, axis=2)
-        left_wrist = keypoints[:, :, self.left_wrist_idx, :]
-        left_wrist = tf.expand_dims(left_wrist, axis=2)
-        right_wrist = keypoints[:, :, self.right_wrist_idx, :]
-        right_wrist = tf.expand_dims(right_wrist, axis=2)
-
-        left_hand = tf.where(
-            tf.math.is_nan(left_hand),
-            tf.repeat(left_wrist, 21, axis=2),
-            left_hand)
-        right_hand = tf.where(
-            tf.math.is_nan(right_hand),
-            tf.repeat(right_wrist, 21, axis=2),
-            right_hand)
-        face = tf.where(
-            tf.math.is_nan(face),
-            tf.repeat(nose, 468, axis=2),
-            face)
-
-        keypoints = tf.concat([face, left_hand, pose, right_hand], axis=2)
-
-        return keypoints
-
-
-class OneItemBatch(tf.keras.layers.Layer):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    @tf.function
-    def call(self, keypoints):
-        keypoints = tf.expand_dims(keypoints, 0)
-        return keypoints
-
-
-class OneItemUnbatch(tf.keras.layers.Layer):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    @tf.function
-    def call(self, keypoints):
-        return keypoints[0]
