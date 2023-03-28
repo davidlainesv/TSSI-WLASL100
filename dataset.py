@@ -1,10 +1,11 @@
 import tensorflow as tf
 from config import MAX_INPUT_HEIGHT, MIN_INPUT_HEIGHT
 from data_augmentation import RandomFlip, RandomScale, RandomShift, RandomRotation, RandomSpeed
-from preprocessing import Center, FillBlueWithAngle, PadIfLessThan, ResizeIfMoreThan, TranslationScaleInvariant, preprocess_dataframe
+from preprocessing import Center, FillBlueWithAngle, PadIfLessThan, ResizeIfMoreThan, TranslationScaleInvariant
 from skeleton_graph import tssi_legacy, tssi_v2, tssi_v3
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
+from preprocessing_legacy import preprocess_dataframe
 
 AugmentationDict = {
     'speed': RandomSpeed(min_frames=48, max_frames=74, seed=5),
