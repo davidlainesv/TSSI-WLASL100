@@ -6,7 +6,7 @@ import wandb
 from wandb.keras import WandbCallback
 import tensorflow as tf
 import pandas as pd
-from model import build_densenet121_model, build_efficientnet_model, build_mobilenetv2_model
+from model import build_densenet121_model
 from optimizer import build_sgd_optimizer
 from utils import str2bool
 
@@ -60,17 +60,16 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
         model = build_densenet121_model(input_shape=input_shape,
                                         dropout=config['dropout'],
                                         optimizer=optimizer,
-                                        pretraining=config['pretraining'])
-    elif config['backbone'] == "mobilenet":
-        model = build_mobilenetv2_model(input_shape=input_shape,
-                                        dropout=config['dropout'],
-                                        optimizer=optimizer,
-                                        pretraining=config['pretraining'])
-    elif config['backbone'] == "efficientnet":
-        model = build_efficientnet_model(input_shape=input_shape,
-                                         dropout=config['dropout'],
-                                         optimizer=optimizer,
-                                         pretraining=config['pretraining'])
+                                        pretraining=config['pretraining'],
+                                        use_loss=config['use_loss'],
+                                        attention=config['use_attention'],
+                                        growth_rate=config['growth_rate'],
+                                        densenet_depth=config['densenet_depth'])
+    # elif config['backbone'] == "efficientnet":
+    #     model = build_efficientnet_model(input_shape=input_shape,
+    #                                      dropout=config['dropout'],
+    #                                      optimizer=optimizer,
+    #                                      pretraining=config['pretraining'])
     else:
         raise Exception("Unknown model name")
 
@@ -119,6 +118,10 @@ def main(args):
     num_epochs = args.num_epochs
     pipeline = args.pipeline
     skeleton = args.skeleton
+    use_loss = args.use_loss
+    use_attention = args.use_attention
+    growth_rate = args.growth_rate
+    densenet_depth = args.densenet_depth
 
     train_dataframe = pd.read_csv(
         "wlasl100_skeletons_train.csv", index_col=0)
@@ -145,7 +148,10 @@ def main(args):
         'batch_size': batch_size,
         'pipeline': pipeline,
 
-        'skeleton': skeleton
+        'use_loss': use_loss,
+        'use_attention': use_attention,
+        'growth_rate': growth_rate,
+        'densenet_depth': densenet_depth
     }
 
     agent_fn(config=config, project=project, entity=entity, verbose=2)
@@ -178,8 +184,16 @@ if __name__ == "__main__":
                         help='Number of epochs', default=100)
     parser.add_argument('--pipeline', type=str,
                         help='Pipeline', default="default")
-    parser.add_argument('--skeleton', type=str,
-                        help='Skeleton Graph', default="v2")
+    parser.add_argument('--growth_rate', type=int,
+                        help='Growth rate of the DenseNet-121', default=12)
+    parser.add_argument('--use_attention', type=str,
+                        help='Attention module: \'se\', \'cbam\'',
+                        default=None)
+    parser.add_argument('--use_loss', type=str,
+                        help='Loss function', default="crossentropy")
+    parser.add_argument('--densenet_depth', type=int,
+                        help='DenseNet depth', default=121)
+
     args = parser.parse_args()
 
     print(args)
