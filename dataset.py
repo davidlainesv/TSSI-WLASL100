@@ -31,7 +31,8 @@ NormalizationDict = {
 # default_augmentation_order = ['speed', 'rotation', 'flip', 'scale', 'shift']
 PipelineDict = {
     'default': {
-        'augmentation': ['speed', 'flip', 'scale'],
+        # 'augmentation': ['speed', 'flip', 'scale'],
+        'augmentation': ['speed'],
         'train_normalization': ['train_resize', 'pad'],
         'test_normalization': ['test_resize', 'pad']
     },
