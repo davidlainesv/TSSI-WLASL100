@@ -40,9 +40,9 @@ def build_densenet121_model(input_shape=[None, 135, 2],
                             growth_rate=12,
                             attention=None,
                             densenet_depth=121):
-    if pretraining and growth_rate != 32 and attention != None:
-        raise Exception(
-            "pretraining on ImageNet is only compatible with growth_rate=32 and attention=None")
+    # if pretraining and growth_rate != 32 and attention != None:
+    #     raise Exception(
+    #         "pretraining on ImageNet is only compatible with growth_rate=32 and attention=None")
 
     # setup backbone
     weights = 'imagenet' if pretraining else None
