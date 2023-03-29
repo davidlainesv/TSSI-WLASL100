@@ -31,6 +31,9 @@ def get_pretrained_backbone(backbone):
     logits = model.layers[-2].output
     # avg_pooling = tf.keras.layers.GlobalAveragePooling2D(name="avg_pool")(logits)
     model = Model(inputs=inputs, outputs=logits)
+    print("backbone")
+    model.summary()
+    print("\n")
     model.trainable = True
     return model
 
