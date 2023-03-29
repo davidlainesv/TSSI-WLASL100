@@ -7,8 +7,29 @@ from tensorflow.keras.metrics import TopKCategoricalAccuracy
 from tensorflow.keras.layers import Dropout, Dense
 from tensorflow.keras import Input
 from tensorflow.keras.models import Model
+import wandb
 # from tensorflow.keras.applications.densenet import DenseNet121
 # from tensorflow.keras.applications.efficientnet import EfficientNetB0
+
+
+def get_pretrained_backbone(backbone):
+    api = wandb.Api()
+    # get the directory in which the model is saved
+    weights_at = api.artifact(
+        'davidlainesv/autsl-testing/run_hb742eon_model:v0')
+    # download the directory in which the model is saved
+    weights_dir = weights_at.download()
+    # get backbone inputs
+    inputs = backbone.input
+    # setup structure of AUTSL with placeholder layers
+    x = backbone(inputs)
+    predictions = Dense(226, activation='softmax')(x)
+    # wrap into a model to load weights
+    model = Model(inputs=inputs, outputs=predictions)
+    model.load_weights(weights_dir + "/weights").expect_partial()
+    # return model up to the last 1 layers
+    model = Model(inputs=inputs, outputs=model.layers[-1].output)
+    return model
 
 
 def build_densenet121_model(input_shape=[None, 135, 2],
@@ -41,9 +62,15 @@ def build_densenet121_model(input_shape=[None, 135, 2],
                            growth_rate=growth_rate,
                            attention=attention,
                            dropout=dropout)
+    
+    # load weights if pretraining
+    if pretraining:
+        backbone = get_pretrained_backbone(backbone)
 
     # setup model
     inputs = Input(shape=input_shape)
+    # training_mode = not pretraining
+    # x = backbone(inputs, training=training_mode)
     x = backbone(inputs)
     # x = Dropout(dropout)(x)
     predictions = Dense(NUM_CLASSES, activation='softmax')(x)
