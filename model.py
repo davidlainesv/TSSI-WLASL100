@@ -28,9 +28,8 @@ def get_pretrained_backbone(backbone):
     model = Model(inputs=inputs, outputs=predictions)
     model.load_weights(weights_dir + "/weights").expect_partial()
     # return model up to the last 2 layers
-    logits = model.layers[-3].output
-    avg_pooling = tf.keras.layers.GlobalAveragePooling2D(name="avg_pool")(logits)
-    model = Model(inputs=inputs, outputs=avg_pooling)
+    logits = model.layers[-2].output
+    model = Model(inputs=inputs, outputs=logits)
     model.trainable = False
     return model
 
@@ -73,6 +72,7 @@ def build_densenet121_model(input_shape=[None, 135, 2],
     inputs = Input(shape=input_shape)
     training_mode = not pretraining
     x = backbone(inputs, training=training_mode)
+
     # x = backbone(inputs)
     # x = Dropout(dropout)(x)
     predictions = Dense(NUM_CLASSES, activation='softmax')(x)
