@@ -26,17 +26,10 @@ def get_pretrained_backbone(backbone):
     predictions = Dense(226, activation='softmax')(x)
     # wrap into a model to load weights
     model = Model(inputs=inputs, outputs=predictions)
-    print("original backbone")
-    model.summary()
-    print("\n")
     model.load_weights(weights_dir + "/weights").expect_partial()
     # return model up to the last 2 layers
     logits = model.layers[-2].output
-    # avg_pooling = tf.keras.layers.GlobalAveragePooling2D(name="avg_pool")(logits)
     model = Model(inputs=inputs, outputs=logits)
-    print("backbone")
-    model.summary()
-    print("\n")
     model.trainable = True
     return model
 
@@ -81,7 +74,6 @@ def build_densenet121_model(input_shape=[None, 135, 2],
     # x = backbone(inputs, training=training_mode)
     x = backbone(inputs)
 
-    # x = backbone(inputs)
     # x = Dropout(dropout)(x)
     predictions = Dense(NUM_CLASSES, activation='softmax')(x)
     model = Model(inputs=inputs, outputs=predictions)
