@@ -45,7 +45,6 @@ def build_densenet121_model(input_shape=[None, 135, 2],
     #         "pretraining on ImageNet is only compatible with growth_rate=32 and attention=None")
 
     # setup backbone
-    weights = 'imagenet' if pretraining else None
     if densenet_depth == 121:
         backbone_fn = DenseNet121
     elif densenet_depth == 169:
@@ -56,7 +55,7 @@ def build_densenet121_model(input_shape=[None, 135, 2],
         raise Exception("DenseNet depth unknown")
 
     backbone = backbone_fn(input_shape=input_shape,
-                           weights=weights,
+                           weights=None,
                            include_top=False,
                            pooling="avg",
                            growth_rate=growth_rate,
