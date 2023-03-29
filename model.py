@@ -29,8 +29,8 @@ def get_pretrained_backbone(backbone):
     model.load_weights(weights_dir + "/weights").expect_partial()
     # return model up to the last 2 layers
     logits = model.layers[-2].output
-    avg_pooling = tf.keras.layers.GlobalAveragePooling2D(name="avg_pool")(logits)
-    model = Model(inputs=inputs, outputs=avg_pooling)
+    # avg_pooling = tf.keras.layers.GlobalAveragePooling2D(name="avg_pool")(logits)
+    model = Model(inputs=inputs, outputs=logits)
     model.trainable = False
     return model
 
