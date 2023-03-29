@@ -26,6 +26,9 @@ def get_pretrained_backbone(backbone):
     predictions = Dense(226, activation='softmax')(x)
     # wrap into a model to load weights
     model = Model(inputs=inputs, outputs=predictions)
+    print("original backbone")
+    model.summary()
+    print("\n")
     model.load_weights(weights_dir + "/weights").expect_partial()
     # return model up to the last 2 layers
     logits = model.layers[-2].output
