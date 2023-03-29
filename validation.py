@@ -74,6 +74,7 @@ def run_experiment(config=None, log_to_wandb=True, verbose=0):
         raise Exception("Unknown model name")
 
     print("[INFO] Input Shape:", input_shape)
+    model.summary()
 
     # setup callbacks
     callbacks = []
