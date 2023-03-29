@@ -1,6 +1,6 @@
 import tensorflow as tf
 from config import MAX_INPUT_HEIGHT, MIN_INPUT_HEIGHT
-from data_augmentation import RandomFlip, RandomScale, RandomShift, RandomRotation, RandomSpeed
+from data_augmentation import RandomFlip, RandomFlip2D, RandomRotation2D, RandomScale, RandomScale2D, RandomShift, RandomRotation, RandomShift2D, RandomSpeed
 from preprocessing import Center, FillBlueWithAngle, PadIfLessThan, RemoveZ, ResizeIfMoreThan, TranslationScaleInvariant
 from skeleton_graph import tssi_legacy, tssi_v2, tssi_v3
 from sklearn.preprocessing import OneHotEncoder
@@ -9,10 +9,10 @@ from preprocessing_legacy import preprocess_dataframe
 
 AugmentationDict = {
     'speed': RandomSpeed(min_frames=48, max_frames=74, seed=5),
-    'rotation': RandomRotation(factor=15.0, min_value=0.0, max_value=1.0, seed=4),
-    'flip': RandomFlip("horizontal", min_value=0.0, max_value=1.0, seed=3),
-    'scale': RandomScale(min_value=0.0, max_value=1.0, seed=1),
-    'shift': RandomShift(min_value=0.0, max_value=1.0, seed=2)
+    'rotation': RandomRotation2D(factor=15.0, min_value=0.0, max_value=1.0, seed=4),
+    'flip': RandomFlip2D("horizontal", min_value=0.0, max_value=1.0, seed=3),
+    'scale': RandomScale2D(min_value=0.0, max_value=1.0, seed=1),
+    'shift': RandomShift2D(min_value=0.0, max_value=1.0, seed=2)
 }
 
 NormalizationDict = {
@@ -31,8 +31,8 @@ NormalizationDict = {
 # default_augmentation_order = ['speed', 'rotation', 'flip', 'scale', 'shift']
 PipelineDict = {
     'default': {
-        # 'augmentation': ['speed', 'flip', 'scale'],
-        'augmentation': ['speed'],
+        'augmentation': ['speed', 'flip', 'scale'],
+        # 'augmentation': ['speed'],
         'train_normalization': ['train_resize', 'pad'],
         'test_normalization': ['test_resize', 'pad']
     },
