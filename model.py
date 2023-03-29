@@ -71,8 +71,9 @@ def build_densenet121_model(input_shape=[None, 135, 2],
 
     # setup model
     inputs = Input(shape=input_shape)
-    training_mode = not pretraining
-    x = backbone(inputs, training=training_mode)
+    # training_mode = not pretraining
+    # x = backbone(inputs, training=training_mode)
+    x = backbone(inputs)
 
     # x = backbone(inputs)
     # x = Dropout(dropout)(x)
